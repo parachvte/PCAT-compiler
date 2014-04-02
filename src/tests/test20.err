@@ -1,0 +1,7 @@
+Error: "integer out of range" on line 1 of stdin
+Error: "Illegal character `\011' in string ignored" on line 6 of stdin
+Error: "String too long" on line 9 of stdin
+Error: "Identifier too long" on line 18 of stdin
+Error: "Illegal character `\007' ignored" on line 30 of stdin
+Error: "Unterminated string" on line 37 of stdin
+Error: "Unterminated comment" on line 41 of stdin
