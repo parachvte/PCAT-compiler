@@ -123,6 +123,7 @@ using namespace std;
 #define	ERROR	318
 
 
+#define NUM_KEYWORD 61
 
 string keywords[] = {
 "identifier", "integer", "real", "string",

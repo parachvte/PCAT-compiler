@@ -24,19 +24,17 @@ int main(int argc, char* arg[]) {
     if (argc > 1)
         yyin = fopen(arg[1], "r");
 
+    bool success = true;
     for (;;) {
         short n = yylex();
         if (n == EOFF) break;
-
-        // print (Line, Column)
-        printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
-        // print 
-        if (n < 262) {
-            // identifier, interger, real, string
-            printf("%s: %s\n", keywords[n - 258].c_str(), yytext);
-        } else {
-            // reversed keywords indeed
-            printf("%s\n", keywords[n - 258].c_str());
+        if (n == ERROR) {
+            success = false;
+            // break;
         }
+    }
+    if (success) {
+        printf("==============================\n");
+        printf("Lexical scanning successful.\n");
     }
 }

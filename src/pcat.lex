@@ -9,18 +9,18 @@
     /*================== Definition Section =================*/
 %{
     #include <cstdio>
+    #include <cstring>
 
     /* ============= Miscellaneous Macros =============*/
-    #define YY_USER_ACTION yyuseraction();
+    #define YY_USER_ACTION yy_user_action();
 
     /* ============== Useful functions ==================
     Maybe move to another file later... by Ryan
     ===================================================*/
 
     // user action prior to matched rule's action
-    void yyuseraction() {
+    void yy_user_action() {
         columnno += yyleng;
-        // maybe convert yytext to lowercase
     }
     // print error message
     void yyerror(char *err_msg) {
@@ -34,7 +34,31 @@
 /* Makes the scanner not call yywrap() upon an end-of-file */
 %option noyywrap
 
-%x COMMENT
+
+    /*=================== Regex Patterns ====================*/
+
+    /* basics */
+DIGIT [0-9]
+LETTERS [a-zA-Z]
+LETTERS_USCORE {LETTERS}|_
+EXPONENT [Ee][+-]?{DIGIT}+
+SPACES [ \t]
+
+    /* matchs '(*' + ([not * not )] | ([not *]+ + ')') | ('*' + [not ')']+)) + '*)', too dirty... */
+COMMENT \(\*([^\*\)]|([^\*]+\))|(\*[^\)]+))*\*\)
+
+    /* matchs all reserved keywords */
+KEYWORDS PROGRAM|IS|BEGIN|END|VAR|TYPE|PROCEDURE|ARRAY|RECORD|IN|OUT|READ|WRITE|IF|THEN|ELSE|ELSIF|WHILE|DO|LOOP|FOR|EXIT|RETURN|TO|BY|AND|OR|NOT|OF|DIV|MOD
+
+    /* matchs all operators */
+OPERATORS \(|\)|\[|\]|\{|\}|:|\.|;|,|:=|\+|\-|\*|\/|\\\\|=|<>|<|<=|>|>=|[<|>]
+
+    /* matchs identifiers & basic types */
+IDENTIFIER {LETTERS_USCORE}({LETTERS_USCORE}|{DIGIT})*
+INTEGERT {DIGIT}+
+REALT ({INTEGERT}\.{INTEGERT}?)|({INTEGERT}?\.{INTEGERT}){EXPONENT}?
+STRINGT \"([^\n\"])*\" 
+
 
 %%
     /*================== Rules Section =======================
@@ -47,96 +71,60 @@
     ========================================================*/
 
     /* Comments Start Condition */
-
-"(*" {
-    columnno += 2;
-    BEGIN(COMMENT);
-    yymore();
-}
-<COMMENT>"*)" {
-    columnno += 2;
+{COMMENT} {
     printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
-    printf("Comment: %s\n", yytext);
-    BEGIN(INITIAL);
+    printf("Comment    : %s\n", yytext);
 }
-<COMMENT>. {
-    columnno++;
-    yymore();
+    /* Keywords */
+{KEYWORDS} {
+    printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
+    printf("Keyword    : %s\n", yytext);
+
+    for (int i = 0; i < NUM_KEYWORD; i++)
+        if (!strcmp(keywords[i].c_str(), yytext)) {
+            return IDENTIFIER + i;
+        }
 }
-<COMMENT><<EOF>> {
-    yyerror("EOF while scanning string literal");
-    return EOFF;
+    /* Operators .. combine with Keywords? */
+{OPERATORS} {
+    printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
+    printf("Operator   : %s\n", yytext);
+    for (int i = 0; i < NUM_KEYWORD; i++)
+        if (!strcmp(keywords[i].c_str(), yytext)) {
+            return IDENTIFIER + i;
+        }
 }
-
-
-    /* KEYWORDS */
-
-"PROGRAM"   return PROGRAM;
-"IS"        return IS;
-"BEGIN"     return BEGINT;
-"END"       return END;
-"TYPE"      return TYPE;
-"PROCEDURE" return PROCEDURE;
-"ARRAY"     return ARRAY;
-"RECORD"    return RECORD;
-"IN"        return IN;
-"OUT"       return OUT;
-"READ"      return READ;
-"WRITE"     return WRITE;
-"IF"        return IF;
-"THEN"      return THEN;
-"ELSE"      return ELSE;
-"ELSIF"     return ELSIF;
-"WHILE"     return WHILE;
-"DO"        return DO;
-"LOOP"      return LOOP;
-"FOR"       return FOR;
-"EXIT"      return EXIT;
-"RETURN"    return RETURN;
-"TO"        return TO; 
-"BY"        return BY; 
-"AND"       return AND;
-"OR"        return OR; 
-"NOT"       return NOT;
-"OF"        return OF; 
-"DIV"       return DIV;
-"MOD"       return MOD;
-
-"("         return LPAREN;
-")"         return RPAREN;
-"["         return LBRACKET;
-"]"         return RBRACKET;
-"{"         return LBRACE;
-"}"         return RBRACE;
-":"         return COLON;
-"."         return DOT;
-";"         return SEMICOLON;
-","         return COMMA;
-":="        return ASSIGN;
-"+"         return PLUS;
-"-"         return MINUS;
-"*"         return STAR;
-"/"         return SLASH;
-"\\"        return BACKSLASH;
-"="         return EQ;
-"<>"        return NEQ;
-"<"         return LT;
-"<="        return LE;
-">"         return GT;
-">="        return GE;
-"[<"        return LABRACKET;
-">]"        return RABRACKET;
-
+    /* Indentifier & basic types */
+{IDENTIFIER} {
+    printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
+    printf("Identifier : %s\n", yytext);
+    return IDENTIFIER;
+}
+{INTEGERT} {
+    printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
+    printf("Integer    : %s\n", yytext);
+    return INTEGERT;
+}
+{REALT} {
+    printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
+    printf("Real       : %s\n", yytext);
+    return REALT;
+}
+{STRINGT} {
+    printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
+    printf("String     : %s\n", yytext);
+    return STRINGT;
+}
     /* Global rules */
-
 <<EOF>> return EOFF; // EOF
-<*>"\n" {
+<*>"\n" { // newline
     columnno = 1;
 }
+{SPACES}+ {} // ignore the spaces
 . { // others
     yyerror("Tokens undetected");
+    return ERROR;
 }
 %%
 
-    /*=================== User Code =========================
-    ========================================================*/
+    /*=================== User Code ========================*/

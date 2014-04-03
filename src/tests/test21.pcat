@@ -1,0 +1,6 @@
+(* test21:
+(*   multiline comments.
+(*                       *)
+PROGRAM IS
+BEGIN 
+END;
