@@ -5,23 +5,30 @@
 #--------------------------------------------------------------------------------
 
 
-GCC = g++
-CXXFLAGS = -g -Wall -Wno-unused-function -Wno-write-strings
+GCC = gcc
+CXXFLAGS = -g -std=gnu99 -Wall -Wno-unused-function -Wno-write-strings
 YACC = bison
+YFLAGS = -d -t -y
 LEX = flex
 PYTHON = python
 
-all: lexer
+
+all: parser
+
+parser: main.c y.tab.c lex.yy.c tokens.h ast.h ast.o
+	$(GCC) $(CXXFLAGS) lex.yy.c y.tab.c main.c ast.o -o parser
+
+ast.o: ast.c ast.h
+	$(GCC) $(CXXFLAGS) -c ast.c
+
+y.tab.c: pcat.y
+	$(YACC) $(YFLAGS) pcat.y
+
+lex.yy.c: pcat.lex tokens.h
+	$(LEX) pcat.lex
 
 test:
 	$(PYTHON) run_tests.py
 
-lexer:	main.cc pcat.yy.c tokens.h
-	$(GCC) $(CXXFLAGS) main.cc -o lexer
-
-pcat.yy.c: pcat.lex
-	$(LEX) pcat.lex
-	mv lex.yy.c pcat.yy.c
-
 clean: 
-	/bin/rm -f *.o *~ pcat.yy.c lexer
+	/bin/rm -f *.o *~ lex.yy.c y.tab.* parser

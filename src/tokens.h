@@ -54,8 +54,6 @@
 * 
 ************************************************************************/
 
-#include <string>
-using namespace std;
 
 // reserved words
 #define	IDENTIFIER	258
@@ -125,7 +123,7 @@ using namespace std;
 
 #define NUM_KEYWORD 61
 
-string keywords[] = {
+char keywords[][12] = {
 "identifier", "integer", "real", "string",
 "PROGRAM", "IS", "BEGIN", "END", "VAR",
 "TYPE", "PROCEDURE", "ARRAY", "RECORD", "IN",

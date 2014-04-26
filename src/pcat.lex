@@ -8,8 +8,12 @@
 
     /*================== Definition Section =================*/
 %{
-    #include <cstdio>
-    #include <cstring>
+    #include <stdio.h>
+    #include <string.h>
+
+    #include "tokens.h"
+
+    int columnno = 1;
 
     /* ============= Miscellaneous Macros =============*/
     #define YY_USER_ACTION yy_user_action();
@@ -18,13 +22,11 @@
     Maybe move to another file later... by Ryan
     ===================================================*/
 
+    extern void yyerror(char *);
+
     // user action prior to matched rule's action
     void yy_user_action() {
         columnno += yyleng;
-    }
-    // print error message
-    void yyerror(char *err_msg) {
-        printf("\n*** Error: %s (Line: %d, token: '%s')\n", err_msg, yylineno, yytext);
     }
 
 %}
@@ -81,7 +83,7 @@ STRINGT \"([^\n\"])*\"
     printf("Keyword    : %s\n", yytext);
 
     for (int i = 0; i < NUM_KEYWORD; i++)
-        if (!strcmp(keywords[i].c_str(), yytext)) {
+        if (!strcmp(keywords[i], yytext)) {
             return IDENTIFIER + i;
         }
 }
@@ -90,7 +92,7 @@ STRINGT \"([^\n\"])*\"
     printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
     printf("Operator   : %s\n", yytext);
     for (int i = 0; i < NUM_KEYWORD; i++)
-        if (!strcmp(keywords[i].c_str(), yytext)) {
+        if (!strcmp(keywords[i], yytext)) {
             return IDENTIFIER + i;
         }
 }
@@ -116,7 +118,7 @@ STRINGT \"([^\n\"])*\"
     return STRINGT;
 }
     /* Global rules */
-<<EOF>> return EOFF; // EOF
+    /* <<EOF>> return EOFF; // EOF is ignored */
 <*>"\n" { // newline
     columnno = 1;
 }

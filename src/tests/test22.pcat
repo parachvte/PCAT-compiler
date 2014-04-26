@@ -1,0 +1,6 @@
+(* test01:               *)
+(*   test var decls.     *)
+(*                       *)
+PROGRAM IS
+BEGIN 
+END;
