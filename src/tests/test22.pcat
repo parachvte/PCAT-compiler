@@ -2,5 +2,6 @@
 (*   test var decls.     *)
 (*                       *)
 PROGRAM IS
+    VAR i: INTEGER := 1; 
 BEGIN 
 END;

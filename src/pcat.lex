@@ -11,8 +11,10 @@
     #include <stdio.h>
     #include <string.h>
 
+    #include "y.tab.h"
     #include "tokens.h"
 
+    //extern YYLTYPE *yylloc;
     int columnno = 1;
 
     /* ============= Miscellaneous Macros =============*/
@@ -26,6 +28,11 @@
 
     // user action prior to matched rule's action
     void yy_user_action() {
+        yylloc.first_line = yylineno;
+        yylloc.first_column = columnno;
+        yylloc.last_line = yylineno;
+        yylloc.last_column = columnno + yyleng - 1;
+
         columnno += yyleng;
     }
 
@@ -103,6 +110,10 @@ STRINGT \"([^\n\"])*\"
     return IDENTIFIER;
 }
 {INTEGERT} {
+    if (yyleng > 10) {
+        yyerror("Integer too long");
+        return ERROR;
+    }
     printf("Ln: %d\tCol: %d\t\t", yylineno, columnno - yyleng);
     printf("Integer    : %s\n", yytext);
     return INTEGERT;
@@ -128,5 +139,3 @@ STRINGT \"([^\n\"])*\"
     return ERROR;
 }
 %%
-
-    /*=================== User Code ========================*/

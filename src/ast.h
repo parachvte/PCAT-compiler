@@ -15,21 +15,54 @@
 /* Put the names of all the different kinds of ASTs here */
 
 typedef enum {
-    Program, Body,
-
-    if_exp, eq_exp, lt_exp, gt_exp, le_exp, ne_exp, ge_exp, plus_exp, minus_exp,
-    times_exp, div_exp, or_exp, and_exp, not_exp, call_exp, fnc_def
+    Program, Body, // 1. Program
+    DeclarationBlock, VariableDeclarationLine, TypeDecs, ProcDecs, // 2. Declaration
+    VariableDeclaration, TypeInferNeeded, Var, // 3. Variables
+    TypeDec, NamedType, ArrayType, RecordType, CompList, Comp, // 4. Types
+    ProcDec, VoidType, FormalParamList, Param, // 5. Procedure
+    LvalList, ArrayDeref, RecordDeref,  // 6. L-Value
+    StatementBlock, AssignStatement, CallStatement, // 7. Statement
+    ReadStatement, WriteStatement, IfStatement, WhileStatement, LoopStatement, 
+    ForStatement, ExitStatement, ReturnStatement,
+    ExprList, EmptyExpression, LvalExp, ArrayExp, // 8. Expression
+    BinOpExp, UnOpExp, CallExp, RecordExp, 
+    RecordInitList, RecordInit, ArrayInitList, ArrayInit, 
+    Gt, Lt, Eq, 
+    Ge, Le, Ne, Plus, Minus, 
+    Times, Slash, Divide, Module, And,
+    Or, UPlus, UMinus, Not, 
+/*
+    NoType,
+    StList, 
+*/
 } ast_kind;
 
 static char* ast_names[] = {
-    "if_exp", "eq_exp", "lt_exp", "gt_exp", "le_exp", "ne_exp", "ge_exp", "plus_exp", "minus_exp",
-    "times_exp", "div_exp", "or_exp", "and_exp", "not_exp", "call_exp", "fnc_def"
+    "Program", "Body", // 1
+    "Declaration Block", "Variable Declaration Line", "Type Declaration List", "Procedure Declaration List",  // 2
+    "Varible Declaration", "Type Infer Needed", "Var", // 3
+    "Type Declaration", "Named Type", "Array Type", "Record Type", "Component List", "Component", // 4
+    "Procedure Declaration", "Void Type", "Formal Parameter List", "Parameter", // 5
+    "L-Value List", "Array Deref", "Record Deref", // 6
+    "Statement Block", "Assign Statement", "Call Statement", // 7 
+    "Read Statement", "Write Statement", "If Statement", "While Statement", "Loop Statement", 
+    "For Statement", "Exit Statement", "Return Statement",
+    "ExprList", "Empty Expression", "L-Value Expression", "Array Expression", // 8
+    "Binary Operation Expresssion", "Unary Operation Expression", "Call Expression", "Record Expression", 
+    "Record Init List", "Record Init", "Array Init List", "Array Init", 
+    "Gt", "Lt", "Eq", 
+    "Ge", "Le", "Ne", "Plus", "Minus", 
+    "Times", "Slash", "Divide", "Module", "And",
+    "Or", "UPlus", "UMinus", "Not"
+/* 
+    "No Type", 
+    "Statement List", 
+*/
 };
 
 
 /* This is a universal data structure that can capture any AST:
- * The node is an internal node and has a list of children (other ASTs),
- * while the other nodes are leaves       */
+ * The node is an internal node and has a list of children (other ASTs), * while the other nodes are leaves       */
 
 typedef struct ast {
     enum { int_ast, real_ast, var_ast, str_ast, node_ast } tag;
@@ -71,8 +104,7 @@ ast* mk_str ( const char* x );
 
 
 /* create an internal AST node */
-// rewrite in pcat.y
-//ast* mk_node ( const ast_kind tag, ast_list* args );
+// ast* mk_node ( const ast_kind tag, ast_list* args ); // rewrited
 
 
 /* put an AST e in the beginning of the list of ASTs r */
@@ -82,15 +114,16 @@ ast_list* cons ( ast* e, ast_list* r );
 /* the empty list of ASTs */
 #define null NULL
 
-
 /* size of an AST list */
 short length ( ast_list* );
 
 /* reverse the order of ASTs in an AST list */
 ast_list* reverse ( ast_list* );
 
+/* join two AST lists */
+ast_list* join(ast_list *, ast_list *);
 
 /* printing functions for ASTs */
-void print_ast_list ( ast_list* r );
+void print_ast_list(ast_list* r, int offset);
 
-void print_ast ( ast* x );
+void print_ast(ast* x, int offset);

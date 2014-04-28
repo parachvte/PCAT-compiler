@@ -1,111 +1,349 @@
 %{
 
-    // used in pcat.lex
-    extern int yylineno;
-    extern char *yytext;
+    #include <stdlib.h>
 
-    //#include "pcat.yy.c"
     #include "y.tab.h"
     #include "ast.h"
 
+    extern int yylineno;
+    extern char *yytext;
+
+    extern int yylex();
     /* parse error */
-    void yyerror (char* s) {
-        printf("*** %s (line : %d, token: %s)\n", s, yylineno, yytext);
+    void yyerror ( char* s ) {
+        printf("\n*** %s (line : %d, token: '%s')\n", s, yylineno, yytext);
     };
+    /* Rewrite */
+    ast* mk_node(const ast_kind tag, ast_list* args, YYLTYPE *yylloc) {
+        ast* res = (ast*) malloc(sizeof(ast));
+        res->tag = node_ast;
+        res->info.node.tag = tag;
+        res->info.node.arguments = args;
 
-
-    ast* mk_node (const ast_kind tag, ast_list* args, YYLTYPE *yylloc);
+        res->first_line = yylloc->first_line;
+        res->first_column = yylloc->first_column;
+        res->last_line = yylloc->last_line;
+        res->last_column = yylloc->last_column;
+        return res;
+    };
 
 %}
 
 %union {
-        char*           Tstring;
-        struct ast*            Tast;
-        struct ast_list*       Tast_list;
+//  char*                  Tstring;
+    struct ast*            Tast;
+    struct ast_list*       Tast_list;
 }
 
-%token IDENTIFIER INTEGERT REALT STRINGT
+%token ID INTEGERT REALT STRINGT
        PROGRAM IS BEGINT END VAR TYPE PROCEDURE ARRAY RECORD
        IN OUT READ WRITE IF THEN ELSE ELSIF WHILE DO LOOP
        FOR EXIT RETURN TO BY AND OR NOT OF DIV MOD
        LPAREN  RPAREN LBRACKET RBRACKET LBRACE RBRACE COLON DOT
        SEMICOLON COMMA ASSIGN PLUS MINUS STAR SLASH BACKSLASH EQ
-       NEQ LT LE GT GE LABRACKET RABRACKET EOFF ERROR
+       NEQ LT LE GT GE LABRACKET RABRACKET EOFF ERROR NEG // vitual token
 
+
+/* 1. Program */
 %type <Tast> program
 %type <Tast> body
+/* 2. Declaration */
+%type <Tast> declaration_block
+%type <Tast_list> declaration_list
+%type <Tast> declaration
+/* 3. Variables */
+%type <Tast_list> var_decl_list 
+%type <Tast_list> var_decl
+%type <Tast> var_decl_type 
+/* 4. Types */
+%type <Tast_list> type_decl_list
+%type <Tast> type_decl
+%type <Tast> typename
+%type <Tast> type
+%type <Tast_list> component_list
+%type <Tast> component
+/* 5. Procedure */
+%type <Tast_list> procedure_decl_list
+%type <Tast> procedure_decl
+%type <Tast> procedure_decl_type
+%type <Tast> formal_params
+%type <Tast_list> fp_section_list
+%type <Tast_list> fp_section
+/* 6. L-value */
+%type <Tast_list> lvalue_list
+%type <Tast> lvalue
+/* 7. Statement */
+%type <Tast> statement_block
+%type <Tast_list> statement_list
+%type <Tast> statement
+%type <Tast_list> statement_elsif_list
+%type <Tast> statement_else
+%type <Tast> statement_by
+%type <Tast> actual_params
+%type <Tast_list> write_params
+%type <Tast_list> write_expr_list
+%type <Tast> write_expr
+/* 8. Expression */
+%type <Tast_list> expression_list
+%type <Tast> expression
+%type <Tast_list> record_inits_list
+%type <Tast> record_inits
+%type <Tast_list> array_init_list
+%type <Tast> array_inits
+%type <Tast> array_init
+%type <Tast> number
+%type <Tast_list> identifier_list
+%type <Tast> identifier
+%type <Tast> string
+
+// Precedences
+// http://www.haskell.org/happy/doc/html/sec-Precedences.html
+%nonassoc    ASSIGN
+%left        OR
+%left        AND
+%nonassoc    EQ NEQ
+%nonassoc    LT LE GT GE
+%left        PLUS MINUS
+%left        STAR DIV MOD
+%left        NEG
+%nonassoc    LBRACKET DOT
+
 
 %%
 
-start: program                  { print_ast($1); }
+start:
+    program { print_ast($1, 0); }
 ;
-program: PROGRAM IS body SEMICOLON { $$ = mk_node(Program, cons($3, NULL), &@$); } /* @$: location of the whole grouping */
+/* 1. Program */
+program:
+    PROGRAM IS body SEMICOLON { $$ = mk_node(Program, cons($3, NULL), &@$); }
 ;
-body: BEGINT END { $$ = mk_node(Body, NULL, &@$); }
+body:
+    declaration_block BEGINT statement_block END { $$ = mk_node(Body, cons($1, cons($3, NULL)), &@$); }
 ;
-/*
-body:                 declaration_list BEGINT statement_list END { $$=mk_node(BodyDef,cons($1,cons($3,NULL)),&@$); }
+/* 2. Declaration */
+declaration_block:
+    declaration_list { $$ = mk_node(DeclarationBlock, reverse($1), &@$);}
 ;
-declaration_list:     declaration_S { $$=mk_node(DeclareList,reverse($1),&@$);}
+declaration_list:
+    declaration_list declaration { $$ = cons($2, $1); }
+|   { $$ = NULL; }
 ;
-declaration_S:        declaration_S declaration { $$=cons($2,$1); }
-                     | {$$=NULL;}
+declaration:
+    VAR var_decl_list  { $$ = mk_node(VariableDeclarationLine, $2, &@$); }
+|   TYPE type_decl_list  { $$ = mk_node(TypeDecs, reverse($2), &@$); }
+|   PROCEDURE procedure_decl_list { $$ = mk_node(ProcDecs, reverse($2), &@$); }
 ;
-statement_list:       statement_S { $$=mk_node(SeqSt,reverse($1),&@$); }
+/* 3. Variables */
+var_decl_list:
+    var_decl_list var_decl { $$ = join($1, $2); }
+|   { $$ = NULL; }
 ;
-statement_S:          statement_S statement { $$=cons($2,$1); }
-                     | {$$=NULL;}
+var_decl:
+    identifier identifier_list var_decl_type ASSIGN expression SEMICOLON {
+        struct ast_list* id_list = cons($1, reverse($2)); $$ = NULL; 
+        struct ast_list* var_list = NULL;
+        while (id_list !=  NULL) {
+            var_list = cons(mk_node(VariableDeclaration, cons(id_list->elem, cons($3, cons($5, NULL))), &@$), var_list );
+            id_list = id_list->next;
+        }
+        $$ = reverse(var_list);
+    }
 ;
-declaration:          VAR var_decl_S  { $$=mk_node(VarDecs,$2,&@$); }       // by using join, it's in right order, no need for reverse
-                     |TYPE type_decl_S  { $$=mk_node(TypeDecs,reverse($2),&@$); }
-                     |PROCEDURE procedure_decl_S { $$=mk_node(ProcDecs,reverse($2),&@$); }
+var_decl_type:
+    COLON typename { $$ = $2; }
+|   { $$ = mk_node(TypeInferNeeded, NULL, &@$); } /* spacial case */
 ;
-var_decl_S:           var_decl_S var_decl { $$=join($1,$2); }
-                     | {$$=NULL;}
+/* 4. Types */
+type_decl_list:
+    type_decl_list type_decl { $$ = cons($2, $1); }
+|   { $$ = NULL; }
 ;
-type_decl_S:          type_decl_S type_decl { $$=cons($2,$1); }
-                     | {$$=NULL;}
+type_decl:
+    identifier IS type SEMICOLON { $$ = mk_node(TypeDec, cons($1, cons($3, NULL)), &@$); }
 ;
-procedure_decl_S:     procedure_decl_S procedure_decl { $$=cons($2,$1); }
-                     | {$$=NULL;}
+typename:
+    identifier { $$ = mk_node(NamedType, cons($1, NULL), &@$); }
 ;
-var_decl:             identifier var_decl_id_S var_decl_type_O ASSIGN expression SEMICOLON
-                            {
-                                struct ast_list* id_list = cons($1,reverse($2)); $$=NULL; 
-                                struct ast_list* var_list = NULL;
-                                while( id_list != NULL ){
-                                    var_list = cons( mk_node(VarDec,cons(id_list->elem,cons($3,cons($5,NULL))),&@$), var_list );
-                                    id_list = id_list->next;
-                                }
-                                $$=reverse(var_list);
-                            }
+type:
+    ARRAY OF typename { $$ = mk_node(ArrayType, cons($3, NULL), &@$); }
+|   RECORD component component_list END { $$ = mk_node(RecordType, cons(mk_node(CompList, cons($2, reverse($3)), &@$), NULL), &@$); }
 ;
-var_decl_id_S:        var_decl_id_S COMMA identifier { $$=cons($3,$1); }
-                     | {$$=NULL;}
+component_list:
+    component_list component { $$ = cons($2, $1); }
+|   { $$ = NULL; }
 ;
-var_decl_type_O:      COLON typename { $$=$2; }
-                     | {$$=mk_node(TypeInferenceNeeded,NULL,&@$);}
+component:
+    identifier COLON typename SEMICOLON { $$ = mk_node(Comp, cons($1, cons($3, NULL)), &@$); }
 ;
-type_decl:            identifier IS type SEMICOLON { $$=mk_node(TypeDec,cons($1,cons($3,NULL)),&@$); }
+/* 5. Procedure */
+procedure_decl_list:
+    procedure_decl_list procedure_decl { $$ = cons($2, $1); }
+|   { $$ = NULL; }
 ;
-procedure_decl:       identifier formal_params procedure_decl_type_O IS body SEMICOLON { $$=mk_node(ProcDec,cons($1,cons($2,cons($3,cons($5,NULL)))),&@$); }
+procedure_decl:
+    identifier formal_params procedure_decl_type IS body SEMICOLON {
+        $$ = mk_node(ProcDec, cons($1, cons($2, cons($3, cons($5, NULL)))), &@$);
+    }
 ;
-procedure_decl_type_O: COLON typename  { $$=$2; }
-                     | {$$=mk_node(VoidType,NULL,&@$);}
+procedure_decl_type:
+    COLON typename  { $$ = $2; }
+|   { $$ = mk_node(VoidType, NULL, &@$); }
 ;
-typename:             identifier { $$=mk_node(NamedTyp,cons($1,NULL),&@$); }
-*/
+formal_params:
+    LPAREN fp_section fp_section_list RPAREN   { $$ = mk_node(FormalParamList, join($2, $3), &@$); }
+|   LPAREN RPAREN { $$ = mk_node(FormalParamList, NULL, &@$); }
+;
+fp_section_list:
+    fp_section_list SEMICOLON fp_section  { $$ = join($1, $3); }
+|   { $$ = NULL; }
+;
+fp_section:
+    identifier identifier_list COLON typename {  
+        struct ast_list* id_list = cons($1, reverse($2)); $$ = NULL; 
+        struct ast_list* fp_list = NULL;
+        while (id_list !=  NULL) {
+            fp_list = cons(mk_node(Param, cons(id_list->elem, cons($4, NULL)), &@$), fp_list);
+            id_list = id_list->next;
+        }
+        $$ = reverse(fp_list);
+    }
+;
+/* 6. L-value */
+lvalue_list:
+    lvalue_list COMMA lvalue     { $$ = cons($3, $1); }       
+|   { $$ = NULL; }
+;
+lvalue:
+    identifier  { $$ = mk_node(Var, cons($1, NULL), &@$); }
+|   lvalue LBRACKET expression RBRACKET  { $$ = mk_node(ArrayDeref, cons($1, cons($3, NULL)), &@$); }
+|   lvalue DOT identifier   { $$ = mk_node(RecordDeref, cons($1, cons($3, NULL)), &@$); }
+;
+/* 7. Statement */
+statement_block:
+    statement_list { $$ = mk_node(StatementBlock, reverse($1), &@$); }
+;
+statement_list:
+    statement_list statement { $$ = cons($2, $1); }
+|   { $$ = NULL; }
+;
+statement:
+    lvalue ASSIGN expression SEMICOLON  { $$ = mk_node(AssignStatement, cons($1, cons($3, NULL)), &@$); }
+|   identifier actual_params SEMICOLON  { $$ = mk_node(CallStatement, cons($1, cons($2, NULL)), &@$); }
+|   READ LPAREN lvalue lvalue_list RPAREN SEMICOLON    { $$ = mk_node(ReadStatement, cons($3, reverse($4)), &@$); }
+|   WRITE write_params SEMICOLON        { $$ = mk_node(WriteStatement, $2, &@$); }
+|   IF expression THEN statement_block statement_elsif_list statement_else END SEMICOLON {
+        struct ast* if_ast = mk_node(IfStatement, cons($2, cons($4, cons(NULL, NULL))), &@$);
+        struct ast* current_if = if_ast;
+        struct ast_list* middle_list = reverse($5);
+        for( ; middle_list != NULL; middle_list = middle_list->next) {
+            current_if->info.node.arguments->next->next = cons(middle_list->elem, NULL);
+            current_if = current_if->info.node.arguments->next->next->elem;
+        }
+        current_if->info.node.arguments->next->next = cons($6, NULL);
+        $$ = if_ast;
+    }
+|   WHILE expression DO statement_block END SEMICOLON     { $$ = mk_node(WhileStatement, cons($2, cons($4, NULL)), &@$); }
+|   LOOP statement_block END SEMICOLON   { $$ = mk_node(LoopStatement, cons($2, NULL), &@$); }
+|   FOR identifier ASSIGN expression TO expression statement_by DO statement_block END SEMICOLON { 
+        $$ = mk_node(ForStatement, cons($2, cons($4, cons($6, cons($7, cons($9, NULL))))), &@$);
+    }
+|   EXIT SEMICOLON                      { $$ = mk_node(ExitStatement, NULL, &@$); }
+|   RETURN expression SEMICOLON       { $$ = mk_node(ReturnStatement, cons($2, NULL), &@$); }
+;
+statement_elsif_list:
+    statement_elsif_list ELSIF expression THEN statement_block { 
+        $$ = cons(mk_node(IfStatement, cons($3, cons($5, cons(NULL, NULL))), &@$), $1);
+    }
+|   { $$ = NULL; }
+;
+statement_else:
+    ELSE statement_block { $$ = $2; }
+|   { $$ = mk_node(EmptyExpression, NULL, &@$);}
+;
+statement_by:
+    BY expression { $$ = $2; }
+|   { $$ = mk_int(1);}
+;
+actual_params:
+    LPAREN expression expression_list RPAREN  { $$ = mk_node(ExprList, cons($2, reverse($3)), &@$); }
+|   LPAREN RPAREN  { $$ = mk_node(ExprList, NULL, &@$); }
+;
+write_params:
+    LPAREN write_expr write_expr_list RPAREN { $$ = cons($2, reverse($3)); }
+|   LPAREN RPAREN { $$ = NULL; }
+;
+write_expr_list:
+    write_expr_list COMMA write_expr { $$ = cons($3, $1); } 
+|   { $$ = NULL;}
+;
+write_expr:
+    string  { $$ = $1; }
+|   expression { $$ = $1; }
+;
+/* 8. Expression */
+expression_list:
+    expression_list COMMA expression  { $$ = cons($3, $1); }
+|   { $$ = NULL; }
+;
+expression:
+    number                         { $$ = $1; }
+|   lvalue                         { $$ = mk_node(LvalExp, cons($1, NULL), &@$); }
+|   LPAREN expression RPAREN       { $$ = $2; }
+|   PLUS expression                { $$ = mk_node(UnOpExp, cons(mk_node(UPlus, NULL, &@$), cons($2, NULL)), &@$); }
+|   MINUS expression %prec NEG     { $$ = mk_node(UnOpExp, cons(mk_node(UMinus, NULL, &@$), cons($2, NULL)), &@$); }
+|   NOT expression                 { $$ = mk_node(UnOpExp, cons(mk_node(Not, NULL, &@$), cons($2, NULL)), &@$); }
+|   expression PLUS expression     { $$ = mk_node(BinOpExp, cons(mk_node(Plus, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression MINUS expression    { $$ = mk_node(BinOpExp, cons(mk_node(Minus, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression STAR expression     { $$ = mk_node(BinOpExp, cons(mk_node(Times, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression SLASH expression    { $$ = mk_node(BinOpExp, cons(mk_node(Slash, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression DIV expression      { $$ = mk_node(BinOpExp, cons(mk_node(Divide, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression MOD expression      { $$ = mk_node(BinOpExp, cons(mk_node(Module, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression OR expression       { $$ = mk_node(BinOpExp, cons(mk_node(Or, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression AND expression      { $$ = mk_node(BinOpExp, cons(mk_node(And, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression EQ expression       { $$ = mk_node(BinOpExp, cons(mk_node(Eq, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression NEQ expression      { $$ = mk_node(BinOpExp, cons(mk_node(Ne, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression LT expression       { $$ = mk_node(BinOpExp, cons(mk_node(Lt, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression LE expression       { $$ = mk_node(BinOpExp, cons(mk_node(Le, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression GT expression       { $$ = mk_node(BinOpExp, cons(mk_node(Gt, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression GE expression       { $$ = mk_node(BinOpExp, cons(mk_node(Ge, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   identifier actual_params       { $$ = mk_node(CallExp, cons($1, cons($2, NULL)), &@$); }
+|   identifier record_inits        { $$ = mk_node(RecordExp, cons($1, cons($2, NULL)), &@$); }
+|   identifier array_inits         { $$ = mk_node(ArrayExp, cons($1, cons($2, NULL)), &@$); }
+;
+record_inits_list:
+    record_inits_list SEMICOLON identifier ASSIGN expression { $$ = cons(mk_node(RecordInit, cons($3, cons($5, NULL)), &@$), $1); }
+|   { $$ = NULL; }
+;
+record_inits:
+    LBRACE identifier ASSIGN expression record_inits_list RBRACE {
+        $$ = mk_node(RecordInitList, cons(mk_node(RecordInit, cons($2, cons($4, NULL)), &@$), reverse($5)), &@$);
+    }
+;
+array_inits:
+    LABRACKET array_init array_init_list RABRACKET { $$ = mk_node(ArrayInitList, cons($2, reverse($3)), &@$); }
+;
+array_init_list:
+    array_init_list COMMA array_init { $$ = cons($3, $1); }
+|   { $$ = NULL; }
+;
+array_init:
+    expression { $$ = mk_node(ArrayInit, cons($1, NULL), &@$); }
+|   expression OF expression { $$ = mk_node(ArrayInit, cons($1, cons($3, NULL)), &@$); }
+;
+number:
+    INTEGERT { $$ = mk_int(atoi(yytext)); }
+|   REALT { $$ = mk_real(atof(yytext)); }
+;
+identifier_list:
+    identifier_list COMMA identifier { $$ = cons($3, $1); }
+|   { $$ = NULL; }
+;
+identifier:
+    ID { $$ = mk_var(yytext); }
+;
+string:
+    STRINGT { $$ = mk_str(yytext); }
+;
 
 %%
-
-/* rewrite (unused) */
-ast* mk_node (const ast_kind tag, ast_list* args, YYLTYPE *yylloc) {
-    ast* res = (ast*) malloc(sizeof(ast));
-    res->tag = node_ast;
-    res->info.node.tag = tag;
-    res->info.node.arguments = args;
-
-    res->first_line = yylloc->first_line;
-    return res;
-};
-

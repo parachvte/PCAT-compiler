@@ -6,7 +6,7 @@
 
 
 GCC = gcc
-CXXFLAGS = -g -std=gnu99 -Wall -Wno-unused-function -Wno-write-strings
+CXXFLAGS = -g -std=gnu99 -Wall -Wno-unused-function -Wno-unused-variable
 YACC = bison
 YFLAGS = -d -t -y
 LEX = flex
