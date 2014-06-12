@@ -4,17 +4,19 @@
 
     #include "y.tab.h"
     #include "ast.h"
+    #include "action.h"
 
     extern int yylineno;
     extern char *yytext;
 
+    //extern void action(ast* prog);
     extern int yylex();
     /* parse error */
     void yyerror ( char* s ) {
         printf("\n*** %s (line : %d, token: '%s')\n", s, yylineno, yytext);
     };
     /* Rewrite */
-    ast* mk_node(const ast_kind tag, ast_list* args, YYLTYPE *yylloc) {
+    ast* my_mk_node(const ast_kind tag, ast_list* args, YYLTYPE *yylloc) {
         ast* res = (ast*) malloc(sizeof(ast));
         res->tag = node_ast;
         res->info.node.tag = tag;
@@ -80,7 +82,7 @@
 %type <Tast> statement_else
 %type <Tast> statement_by
 %type <Tast> actual_params
-%type <Tast_list> write_params
+%type <Tast> write_params
 %type <Tast_list> write_expr_list
 %type <Tast> write_expr
 /* 8. Expression */
@@ -112,27 +114,31 @@
 %%
 
 start:
-    program { print_ast($1, 0); }
+    program {
+        //print_ast($1, 0);
+        struct ast* prog = $1;
+        action(prog);
+    }
 ;
 /* 1. Program */
 program:
-    PROGRAM IS body SEMICOLON { $$ = mk_node(Program, cons($3, NULL), &@$); }
+    PROGRAM IS body SEMICOLON { $$ = my_mk_node(Program, cons($3, NULL), &@$); }
 ;
 body:
-    declaration_block BEGINT statement_block END { $$ = mk_node(Body, cons($1, cons($3, NULL)), &@$); }
+    declaration_block BEGINT statement_block END { $$ = my_mk_node(Body, cons($1, cons($3, NULL)), &@$); }
 ;
 /* 2. Declaration */
 declaration_block:
-    declaration_list { $$ = mk_node(DeclarationBlock, reverse($1), &@$);}
+    declaration_list { $$ = my_mk_node(DeclarationBlock, reverse($1), &@$);}
 ;
 declaration_list:
     declaration_list declaration { $$ = cons($2, $1); }
 |   { $$ = NULL; }
 ;
 declaration:
-    VAR var_decl_list  { $$ = mk_node(VariableDeclarationLine, $2, &@$); }
-|   TYPE type_decl_list  { $$ = mk_node(TypeDecs, reverse($2), &@$); }
-|   PROCEDURE procedure_decl_list { $$ = mk_node(ProcDecs, reverse($2), &@$); }
+    VAR var_decl_list  { $$ = my_mk_node(VariableDeclarationLine, $2, &@$); }
+|   TYPE type_decl_list  { $$ = my_mk_node(TypeDecs, reverse($2), &@$); }
+|   PROCEDURE procedure_decl_list { $$ = my_mk_node(ProcDecs, reverse($2), &@$); }
 ;
 /* 3. Variables */
 var_decl_list:
@@ -144,7 +150,7 @@ var_decl:
         struct ast_list* id_list = cons($1, reverse($2)); $$ = NULL; 
         struct ast_list* var_list = NULL;
         while (id_list !=  NULL) {
-            var_list = cons(mk_node(VariableDeclaration, cons(id_list->elem, cons($3, cons($5, NULL))), &@$), var_list );
+            var_list = cons(my_mk_node(VariableDeclaration, cons(id_list->elem, cons($3, cons($5, NULL))), &@$), var_list );
             id_list = id_list->next;
         }
         $$ = reverse(var_list);
@@ -152,7 +158,7 @@ var_decl:
 ;
 var_decl_type:
     COLON typename { $$ = $2; }
-|   { $$ = mk_node(TypeInferNeeded, NULL, &@$); } /* spacial case */
+|   { $$ = my_mk_node(TypeInferNeeded, NULL, &@$); } /* spacial case */
 ;
 /* 4. Types */
 type_decl_list:
@@ -160,21 +166,21 @@ type_decl_list:
 |   { $$ = NULL; }
 ;
 type_decl:
-    identifier IS type SEMICOLON { $$ = mk_node(TypeDec, cons($1, cons($3, NULL)), &@$); }
+    identifier IS type SEMICOLON { $$ = my_mk_node(TypeDec, cons($1, cons($3, NULL)), &@$); }
 ;
 typename:
-    identifier { $$ = mk_node(NamedType, cons($1, NULL), &@$); }
+    identifier { $$ = my_mk_node(NamedType, cons($1, NULL), &@$); }
 ;
 type:
-    ARRAY OF typename { $$ = mk_node(ArrayType, cons($3, NULL), &@$); }
-|   RECORD component component_list END { $$ = mk_node(RecordType, cons(mk_node(CompList, cons($2, reverse($3)), &@$), NULL), &@$); }
+    ARRAY OF typename { $$ = my_mk_node(ArrayType, cons($3, NULL), &@$); }
+|   RECORD component component_list END { $$ = my_mk_node(RecordType, cons(my_mk_node(CompList, cons($2, reverse($3)), &@$), NULL), &@$); }
 ;
 component_list:
     component_list component { $$ = cons($2, $1); }
 |   { $$ = NULL; }
 ;
 component:
-    identifier COLON typename SEMICOLON { $$ = mk_node(Comp, cons($1, cons($3, NULL)), &@$); }
+    identifier COLON typename SEMICOLON { $$ = my_mk_node(Comp, cons($1, cons($3, NULL)), &@$); }
 ;
 /* 5. Procedure */
 procedure_decl_list:
@@ -183,16 +189,16 @@ procedure_decl_list:
 ;
 procedure_decl:
     identifier formal_params procedure_decl_type IS body SEMICOLON {
-        $$ = mk_node(ProcDec, cons($1, cons($2, cons($3, cons($5, NULL)))), &@$);
+        $$ = my_mk_node(ProcDec, cons($1, cons($2, cons($3, cons($5, NULL)))), &@$);
     }
 ;
 procedure_decl_type:
     COLON typename  { $$ = $2; }
-|   { $$ = mk_node(VoidType, NULL, &@$); }
+|   { $$ = my_mk_node(VoidType, NULL, &@$); }
 ;
 formal_params:
-    LPAREN fp_section fp_section_list RPAREN   { $$ = mk_node(FormalParamList, join($2, $3), &@$); }
-|   LPAREN RPAREN { $$ = mk_node(FormalParamList, NULL, &@$); }
+    LPAREN fp_section fp_section_list RPAREN   { $$ = my_mk_node(FormalParamList, join($2, $3), &@$); }
+|   LPAREN RPAREN { $$ = my_mk_node(FormalParamList, NULL, &@$); }
 ;
 fp_section_list:
     fp_section_list SEMICOLON fp_section  { $$ = join($1, $3); }
@@ -203,7 +209,7 @@ fp_section:
         struct ast_list* id_list = cons($1, reverse($2)); $$ = NULL; 
         struct ast_list* fp_list = NULL;
         while (id_list !=  NULL) {
-            fp_list = cons(mk_node(Param, cons(id_list->elem, cons($4, NULL)), &@$), fp_list);
+            fp_list = cons(my_mk_node(Param, cons(id_list->elem, cons($4, NULL)), &@$), fp_list);
             id_list = id_list->next;
         }
         $$ = reverse(fp_list);
@@ -215,25 +221,25 @@ lvalue_list:
 |   { $$ = NULL; }
 ;
 lvalue:
-    identifier  { $$ = mk_node(Var, cons($1, NULL), &@$); }
-|   lvalue LBRACKET expression RBRACKET  { $$ = mk_node(ArrayDeref, cons($1, cons($3, NULL)), &@$); }
-|   lvalue DOT identifier   { $$ = mk_node(RecordDeref, cons($1, cons($3, NULL)), &@$); }
+    identifier  { $$ = my_mk_node(Var, cons($1, NULL), &@$); }
+|   lvalue LBRACKET expression RBRACKET  { $$ = my_mk_node(ArrayDeref, cons($1, cons($3, NULL)), &@$); }
+|   lvalue DOT identifier   { $$ = my_mk_node(RecordDeref, cons($1, cons($3, NULL)), &@$); }
 ;
 /* 7. Statement */
 statement_block:
-    statement_list { $$ = mk_node(StatementBlock, reverse($1), &@$); }
+    statement_list { $$ = my_mk_node(StatementBlock, reverse($1), &@$); }
 ;
 statement_list:
     statement_list statement { $$ = cons($2, $1); }
 |   { $$ = NULL; }
 ;
 statement:
-    lvalue ASSIGN expression SEMICOLON  { $$ = mk_node(AssignStatement, cons($1, cons($3, NULL)), &@$); }
-|   identifier actual_params SEMICOLON  { $$ = mk_node(CallStatement, cons($1, cons($2, NULL)), &@$); }
-|   READ LPAREN lvalue lvalue_list RPAREN SEMICOLON    { $$ = mk_node(ReadStatement, cons($3, reverse($4)), &@$); }
-|   WRITE write_params SEMICOLON        { $$ = mk_node(WriteStatement, $2, &@$); }
+    lvalue ASSIGN expression SEMICOLON  { $$ = my_mk_node(AssignStatement, cons($1, cons($3, NULL)), &@$); }
+|   identifier actual_params SEMICOLON  { $$ = my_mk_node(CallStatement, cons($1, cons($2, NULL)), &@$); }
+|   READ LPAREN lvalue lvalue_list RPAREN SEMICOLON    { $$ = my_mk_node(ReadStatement, cons($3, reverse($4)), &@$); }
+|   WRITE write_params SEMICOLON        { $$ = my_mk_node(WriteStatement, cons($2, NULL), &@$); }
 |   IF expression THEN statement_block statement_elsif_list statement_else END SEMICOLON {
-        struct ast* if_ast = mk_node(IfStatement, cons($2, cons($4, cons(NULL, NULL))), &@$);
+        struct ast* if_ast = my_mk_node(IfStatement, cons($2, cons($4, cons(NULL, NULL))), &@$);
         struct ast* current_if = if_ast;
         struct ast_list* middle_list = reverse($5);
         for( ; middle_list != NULL; middle_list = middle_list->next) {
@@ -243,35 +249,35 @@ statement:
         current_if->info.node.arguments->next->next = cons($6, NULL);
         $$ = if_ast;
     }
-|   WHILE expression DO statement_block END SEMICOLON     { $$ = mk_node(WhileStatement, cons($2, cons($4, NULL)), &@$); }
-|   LOOP statement_block END SEMICOLON   { $$ = mk_node(LoopStatement, cons($2, NULL), &@$); }
+|   WHILE expression DO statement_block END SEMICOLON     { $$ = my_mk_node(WhileStatement, cons($2, cons($4, NULL)), &@$); }
+|   LOOP statement_block END SEMICOLON   { $$ = my_mk_node(LoopStatement, cons($2, NULL), &@$); }
 |   FOR identifier ASSIGN expression TO expression statement_by DO statement_block END SEMICOLON { 
-        $$ = mk_node(ForStatement, cons($2, cons($4, cons($6, cons($7, cons($9, NULL))))), &@$);
+        $$ = my_mk_node(ForStatement, cons($2, cons($4, cons($6, cons($7, cons($9, NULL))))), &@$);
     }
-|   EXIT SEMICOLON                      { $$ = mk_node(ExitStatement, NULL, &@$); }
-|   RETURN expression SEMICOLON       { $$ = mk_node(ReturnStatement, cons($2, NULL), &@$); }
+|   EXIT SEMICOLON                      { $$ = my_mk_node(ExitStatement, NULL, &@$); }
+|   RETURN expression SEMICOLON       { $$ = my_mk_node(ReturnStatement, cons($2, NULL), &@$); }
 ;
 statement_elsif_list:
     statement_elsif_list ELSIF expression THEN statement_block { 
-        $$ = cons(mk_node(IfStatement, cons($3, cons($5, cons(NULL, NULL))), &@$), $1);
+        $$ = cons(my_mk_node(IfStatement, cons($3, cons($5, cons(NULL, NULL))), &@$), $1);
     }
 |   { $$ = NULL; }
 ;
 statement_else:
     ELSE statement_block { $$ = $2; }
-|   { $$ = mk_node(EmptyExpression, NULL, &@$);}
+|   { $$ = my_mk_node(EmptyStatement, NULL, &@$);}
 ;
 statement_by:
     BY expression { $$ = $2; }
-|   { $$ = mk_int(1);}
+|   { $$ = my_mk_node(IntConst, cons(mk_int(1), NULL), &@$);}
 ;
 actual_params:
-    LPAREN expression expression_list RPAREN  { $$ = mk_node(ExprList, cons($2, reverse($3)), &@$); }
-|   LPAREN RPAREN  { $$ = mk_node(ExprList, NULL, &@$); }
+    LPAREN expression expression_list RPAREN  { $$ = my_mk_node(ExprList, cons($2, reverse($3)), &@$); }
+|   LPAREN RPAREN  { $$ = my_mk_node(ExprList, NULL, &@$); }
 ;
 write_params:
-    LPAREN write_expr write_expr_list RPAREN { $$ = cons($2, reverse($3)); }
-|   LPAREN RPAREN { $$ = NULL; }
+    LPAREN write_expr write_expr_list RPAREN { $$ = my_mk_node(ExprList, cons($2, reverse($3)), &@$); }
+|   LPAREN RPAREN { $$ = my_mk_node(EmptyExpression, NULL, &@$); }
 ;
 write_expr_list:
     write_expr_list COMMA write_expr { $$ = cons($3, $1); } 
@@ -288,52 +294,52 @@ expression_list:
 ;
 expression:
     number                         { $$ = $1; }
-|   lvalue                         { $$ = mk_node(LvalExp, cons($1, NULL), &@$); }
+|   lvalue                         { $$ = my_mk_node(LvalExp, cons($1, NULL), &@$); }
 |   LPAREN expression RPAREN       { $$ = $2; }
-|   PLUS expression                { $$ = mk_node(UnOpExp, cons(mk_node(UPlus, NULL, &@$), cons($2, NULL)), &@$); }
-|   MINUS expression %prec NEG     { $$ = mk_node(UnOpExp, cons(mk_node(UMinus, NULL, &@$), cons($2, NULL)), &@$); }
-|   NOT expression                 { $$ = mk_node(UnOpExp, cons(mk_node(Not, NULL, &@$), cons($2, NULL)), &@$); }
-|   expression PLUS expression     { $$ = mk_node(BinOpExp, cons(mk_node(Plus, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression MINUS expression    { $$ = mk_node(BinOpExp, cons(mk_node(Minus, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression STAR expression     { $$ = mk_node(BinOpExp, cons(mk_node(Times, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression SLASH expression    { $$ = mk_node(BinOpExp, cons(mk_node(Slash, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression DIV expression      { $$ = mk_node(BinOpExp, cons(mk_node(Divide, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression MOD expression      { $$ = mk_node(BinOpExp, cons(mk_node(Module, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression OR expression       { $$ = mk_node(BinOpExp, cons(mk_node(Or, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression AND expression      { $$ = mk_node(BinOpExp, cons(mk_node(And, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression EQ expression       { $$ = mk_node(BinOpExp, cons(mk_node(Eq, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression NEQ expression      { $$ = mk_node(BinOpExp, cons(mk_node(Ne, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression LT expression       { $$ = mk_node(BinOpExp, cons(mk_node(Lt, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression LE expression       { $$ = mk_node(BinOpExp, cons(mk_node(Le, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression GT expression       { $$ = mk_node(BinOpExp, cons(mk_node(Gt, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   expression GE expression       { $$ = mk_node(BinOpExp, cons(mk_node(Ge, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
-|   identifier actual_params       { $$ = mk_node(CallExp, cons($1, cons($2, NULL)), &@$); }
-|   identifier record_inits        { $$ = mk_node(RecordExp, cons($1, cons($2, NULL)), &@$); }
-|   identifier array_inits         { $$ = mk_node(ArrayExp, cons($1, cons($2, NULL)), &@$); }
+|   PLUS expression                { $$ = my_mk_node(UnOpExp, cons(my_mk_node(UPlus, NULL, &@$), cons($2, NULL)), &@$); }
+|   MINUS expression %prec NEG     { $$ = my_mk_node(UnOpExp, cons(my_mk_node(UMinus, NULL, &@$), cons($2, NULL)), &@$); }
+|   NOT expression                 { $$ = my_mk_node(UnOpExp, cons(my_mk_node(Not, NULL, &@$), cons($2, NULL)), &@$); }
+|   expression PLUS expression     { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Plus, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression MINUS expression    { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Minus, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression STAR expression     { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Times, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression SLASH expression    { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Slash, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression DIV expression      { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Divide, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression MOD expression      { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Module, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression OR expression       { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Or, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression AND expression      { $$ = my_mk_node(BinOpExp, cons(my_mk_node(And, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression EQ expression       { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Eq, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression NEQ expression      { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Ne, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression LT expression       { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Lt, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression LE expression       { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Le, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression GT expression       { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Gt, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   expression GE expression       { $$ = my_mk_node(BinOpExp, cons(my_mk_node(Ge, NULL, &@$), cons($1, cons($3, NULL))), &@$); }
+|   identifier actual_params       { $$ = my_mk_node(CallExp, cons($1, cons($2, NULL)), &@$); }
+|   identifier record_inits        { $$ = my_mk_node(RecordExp, cons($1, cons($2, NULL)), &@$); }
+|   identifier array_inits         { $$ = my_mk_node(ArrayExp, cons($1, cons($2, NULL)), &@$); }
 ;
 record_inits_list:
-    record_inits_list SEMICOLON identifier ASSIGN expression { $$ = cons(mk_node(RecordInit, cons($3, cons($5, NULL)), &@$), $1); }
+    record_inits_list SEMICOLON identifier ASSIGN expression { $$ = cons(my_mk_node(RecordInit, cons($3, cons($5, NULL)), &@$), $1); }
 |   { $$ = NULL; }
 ;
 record_inits:
     LBRACE identifier ASSIGN expression record_inits_list RBRACE {
-        $$ = mk_node(RecordInitList, cons(mk_node(RecordInit, cons($2, cons($4, NULL)), &@$), reverse($5)), &@$);
+        $$ = my_mk_node(RecordInitList, cons(my_mk_node(RecordInit, cons($2, cons($4, NULL)), &@$), reverse($5)), &@$);
     }
 ;
 array_inits:
-    LABRACKET array_init array_init_list RABRACKET { $$ = mk_node(ArrayInitList, cons($2, reverse($3)), &@$); }
+    LABRACKET array_init array_init_list RABRACKET { $$ = my_mk_node(ArrayInitList, cons($2, reverse($3)), &@$); }
 ;
 array_init_list:
     array_init_list COMMA array_init { $$ = cons($3, $1); }
 |   { $$ = NULL; }
 ;
 array_init:
-    expression { $$ = mk_node(ArrayInit, cons($1, NULL), &@$); }
-|   expression OF expression { $$ = mk_node(ArrayInit, cons($1, cons($3, NULL)), &@$); }
+    expression { $$ = my_mk_node(ArrayInit, cons($1, NULL), &@$); }
+|   expression OF expression { $$ = my_mk_node(ArrayInit, cons($1, cons($3, NULL)), &@$); }
 ;
 number:
-    INTEGERT { $$ = mk_int(atoi(yytext)); }
-|   REALT { $$ = mk_real(atof(yytext)); }
+    INTEGERT { $$ = my_mk_node(IntConst, cons(mk_int(atoi(yytext)), NULL), &@$); }
+|   REALT { $$ = my_mk_node(RealConst, cons(mk_real(atof(yytext)), NULL), &@$); }
 ;
 identifier_list:
     identifier_list COMMA identifier { $$ = cons($3, $1); }
@@ -343,7 +349,7 @@ identifier:
     ID { $$ = mk_var(yytext); }
 ;
 string:
-    STRINGT { $$ = mk_str(yytext); }
+    STRINGT { $$ = my_mk_node(StringConst, cons(mk_str(yytext), NULL), &@$); }
 ;
 
 %%
