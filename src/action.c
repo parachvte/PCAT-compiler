@@ -5,6 +5,7 @@
 
 #include "action.h"
 
+#include "code_style.h"
 #include "type.h"
 #include "gen.h"
 

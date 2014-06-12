@@ -155,7 +155,4 @@ void print_ast_list(ast_list* r, int offset);
 
 void print_ast(ast* x, int offset);
 
-void print_ast_code_style(ast* x);
-void _print_ast_code_style(ast* x, int curr_offset);
-
 #endif

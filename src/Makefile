@@ -12,7 +12,7 @@ YFLAGS = -d -t -y
 LEX = flex
 PYTHON = python
 
-ACTIONS = action.o type.o table.o gen.o global.o
+ACTIONS = action.o code_style.o type.o table.o gen.o global.o
 
 all: parser
 
@@ -30,6 +30,9 @@ lex.yy.c: pcat.lex tokens.h
 
 action.o: action.c action.h
 	$(GCC) $(CXXFLAGS) -c action.c
+
+code_style.o: code_style.c code_style.h
+	$(GCC) $(CXXFLAGS) -c code_style.c
 
 type.o: type.c type.h
 	$(GCC) $(CXXFLAGS) -c type.c
