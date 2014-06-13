@@ -8,7 +8,6 @@
 
 void routine(ast* prog) {
     // print Abstract Semantic Tree
-    printf("---------------AST-----------------:\n");
     print_ast_init();
     print_ast(prog, 0);
     print_ast_finish();

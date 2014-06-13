@@ -51,5 +51,6 @@ test:
 	$(PYTHON) run_tests.py
 
 clean: 
-	/bin/rm -f *.o *~ lex.yy.c y.tab.* parser
-	/bin/rm -f tests/*.frame tests/*.log tests/*.exe tests/*.code tests/*.ast
+	rm -f *.o *~ lex.yy.c y.tab.* parser
+	rm -f *.s *.out
+	rm -f tests/*.frame tests/*.log tests/*.exe tests/*.code tests/*.ast
