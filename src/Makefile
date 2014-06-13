@@ -18,6 +18,7 @@ all: parser
 
 parser: main.c y.tab.c lex.yy.c tokens.h ast.h ast.o $(ROUTINES)
 	$(GCC) $(CXXFLAGS) lex.yy.c y.tab.c main.c ast.o $(ROUTINES) -o parser
+	rm -f *.o lex.yy.c y.tab.*
 
 ast.o: ast.c ast.h
 	$(GCC) $(CXXFLAGS) -c ast.c

@@ -11,21 +11,23 @@
 
 #define PO()                print_ast_code_style_offset(offset)
 
-#define SPRINT_NEXT(k)      print_ast_code_style(pick_ast(x, k), NEXT_OFFSET);
 #define SPRINT(k)           print_ast_code_style(pick_ast(x, k), offset);
-#define PRINT_NEXT(t)       print_ast_code_style(t, NEXT_OFFSET);
+#define SPRINT_NEXT(k)      print_ast_code_style(pick_ast(x, k), NEXT_OFFSET);
 #define PRINT(t)            print_ast_code_style(t, offset);
+#define PRINT_NEXT(t)       print_ast_code_style(t, NEXT_OFFSET);
+
 #define EACHPRINT()         FOREACH PRINT(l->elem) 
 #define EACHPRINT_NEXT()    FOREACH PRINT_NEXT(l->elem) 
+
 #define SEPLIST(sep)        do {                    \
-                                i=0;                \
+                                i = 0;              \
                                 FOREACH {           \
                                     if (i > 0) {    \
                                         P(sep);     \
                                         P(" ");     \
                                     }               \
-                                    PRINT(l->elem);    \
-                                    i += 1;         \
+                                    PRINT(l->elem); \
+                                    i++;            \
                                 }                   \
                             } while (0)
 #define RECORD_LINE()       do {                        \
@@ -36,7 +38,7 @@
 int line_no = 0;
 
 void print_ast_code_style_offset(int offset) {
-    printf("%03d |", ++line_no);
+    printf("%04d|", ++line_no);
     for (int i = 0; i < offset; i++) P(" ");
 }
 
@@ -46,20 +48,28 @@ void print_ast_code_style(ast* x, int offset) {
         return;
     }
     RECORD_LINE();
-    switch (tag(x)) {
-        case int_ast:  printf("%d", ast_int(x));  break;
-        case real_ast: printf("%f", ast_real(x)); break;
-        case var_ast:  printf("%s", ast_var(x));  break;
-        case str_ast:  printf("\"%s\"", ast_str(x));  break;
+    switch (x->tag) {
+        case int_ast:
+            printf("%d", ast_int(x));
+            break;
+        case real_ast:
+            printf("%f", ast_real(x));
+            break;
+        case var_ast:
+            printf("%s", ast_var(x));
+            break;
+        case str_ast:
+            printf("\"%s\"", ast_str(x));
+            break;
         case node_ast: {
             struct ast_list* l;
             int i;
             switch (tag(x)) {
                 case Program:
-                    printf("====|==============================================\n");
+                    printf("===================================================\n");
                     PO();RECORD_LINE();P("PROGRAM IS\n");
                     SPRINT(0);
-                    printf("====|==============================================\n");
+                    printf("===================================================\n");
                     break;
                 case Body:
                     SPRINT_NEXT(0);
@@ -204,30 +214,62 @@ void print_ast_code_style(ast* x, int offset) {
                 case RecordDeref:
                     SPRINT(0);P(".");SPRINT(1);
                     break;
-
-                case Gt:P(">");break;
-                case Lt:P("<");break;
-                case Eq:P("=");break;
-                case Ge:P(">=");break;
-                case Le:P("<=");break;
-                case Ne:P("<>");break;
-                case Plus:P("+");break;
-                case Minus:P("-");break;
-                case Times:P("*");break;
-                case Slash:P("/");break;
-                case Divide:P(" div ");break;
-                case Module:P(" mod ");break;
-                case And:P(" and ");break;
-                case Or:P(" or ");break;
-                case UPlus:P("+");break;
-                case UMinus:P("-");break;
-                case Not:P(" not ");break;
-
+                case Gt:
+                    P(">");
+                    break;
+                case Lt:
+                    P("<");
+                    break;
+                case Eq:
+                    P("=");
+                    break;
+                case Ge:
+                    P(">=");
+                    break;
+                case Le:
+                    P("<=");
+                    break;
+                case Ne:
+                    P("<>");
+                    break;
+                case Plus:
+                    P("+");
+                    break;
+                case Minus:
+                    P("-");
+                    break;
+                case Times:
+                    P("*");
+                    break;
+                case Slash:
+                    P("/");
+                    break;
+                case Divide:
+                    P(" div ");
+                    break;
+                case Module:
+                    P(" mod ");
+                    break;
+                case And:
+                    P(" and ");
+                    break;
+                case Or:
+                    P(" or ");
+                    break;
+                case UPlus:
+                    P("+");
+                    break;
+                case UMinus:
+                    P("-");
+                    break;
+                case Not:
+                    P(" not ");
+                    break;
                 case TypeInferNeeded:
-                    P("[Type Inference Needed]");
+                    P("[Type Infer Needed]");
                     break;
                 case VoidType:
-                    P("[Void Type]");
+                    P("[Void]");
                     break;
                 case EmptyStatement:
                     PO();RECORD_LINE();P("[Empty Statement]");P(";\n");
@@ -237,6 +279,6 @@ void print_ast_code_style(ast* x, int offset) {
                     break;
             }
             break;
-        };
+        }
     }
 }
