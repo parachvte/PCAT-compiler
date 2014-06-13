@@ -1,30 +1,32 @@
-﻿#!/bin/bash
+#!/bin/sh
 
-echo "compiling $1"
+echo "Compiling $1"
+file=$1
 
-if [ -f "./parser" ]; then
-	./parser $1 > $1.log
-else
-	make all
-	./parser $1 > $1.log
+# Check if file exist
+if [ ! -f "$file" ]; then
+    echo "File no exists"
+    exit 0
 fi
+dir=`dirname $file`
 
+# parse
+if [ ! -f "./parser" ]; then
+	make
+fi
+./parser $1 > $1.log
+
+# compile to executable
 if [ "$?" -eq "0" ]; then
     rm data.s code.s
     gcc -g -m32 -c sup.c
     gcc -g -m32 -c pcat.s
     gcc -g -m32 sup.o pcat.o -o $1.exe
-    cp pcat.s $1.code
-    cp frame.info $1.frame
-    cp tree.info $1.tree
+    mv pcat.s $1.code
+    mv frame.out $1.frame
+    mv ast.out $1.ast
 
-    rm pcat.s
-    rm frame.info
-    rm tree.info
-    
-    echo "compiling success!"
+    echo "Compiling success!"
 else
-    echo "compiling failed!"
+    echo "Compiling failed!"
 fi
-
-

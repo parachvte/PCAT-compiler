@@ -33,7 +33,7 @@ typedef enum {
     Ge, Le, Ne, Plus, Minus, 
     Times, Slash, Divide, Module, And,
     Or, UPlus, UMinus, Not, 
-    IntConst, RealConst, StringConst,
+    IntConst, RealConst, StringConst, // Const
 /*
     NoType,
     StList, 
@@ -92,39 +92,39 @@ typedef struct ast_list {
 } ast_list;
 
 
+/*================================================
+                Make AST Nodes
+================================================*/
 /* create an integer AST leaf */
-ast* mk_int ( const long x );
-
+ast* mk_int(const long x);
 
 /* create a floating point AST leaf */
-ast* mk_real ( const double x );
-
+ast* mk_real(const double x);
 
 /* create an AST leaf for a name */
-ast* mk_var ( const char* x );
-
+ast* mk_var(const char* x);
 
 /* create a string AST leaf */
-ast* mk_str ( const char* x );
-
+ast* mk_str(const char* x);
 
 /* create an internal AST node */
-// ast* mk_node ( const ast_kind tag, ast_list* args ); // rewrited
-extern ast* mk_node();
+ast* mk_node(const ast_kind tag, ast_list* args);
+//extern ast* mk_node();
 
-
+/*================================================
+                Operations on AST 
+================================================*/
 /* put an AST e in the beginning of the list of ASTs r */
-ast_list* cons ( ast* e, ast_list* r );
-
+ast_list* cons(ast* e, ast_list* r);
 
 /* the empty list of ASTs */
 #define null NULL
 
 /* size of an AST list */
-short length ( ast_list* );
+short length(ast_list*);
 
 /* reverse the order of ASTs in an AST list */
-ast_list* reverse ( ast_list* );
+ast_list* reverse(ast_list*);
 
 /* join two AST lists */
 ast_list* join(ast_list *, ast_list *);
@@ -133,16 +133,22 @@ ast_list* join(ast_list *, ast_list *);
 ast_list* append(ast_list* r, ast* e);
 
 
-/* Access */
-int tag(ast* a);
-int ast_real_repr(ast *a);
+/*================================================
+            Access AST properties
+================================================*/
+int tag(ast* a); // Use function instead of MACRO, this can ensure
+                 // that the type inference works
 
-#define ast_int(a) (a->info.integer)
-#define ast_var(a) (a->info.variable)
-#define ast_str(a) (a->info.string)
-
+//#define tag(a)    (a->info.node.tag)
+#define ast_int(a)  (a->info.integer)
+#define ast_real(a) (a->info.real)
+#define ast_var(a)  (a->info.variable)
+#define ast_str(a)  (a->info.string)
 
 ast_list* args(ast* a);
+int ast_real_repr(ast *a);
+
+
 ast* pick_ast_list(ast_list* a, int k);
 ast* pick_ast(ast* a, int k);
 ast* pick_ast_comp(ast* a, char* name);
@@ -151,8 +157,9 @@ int get_comp_id(ast* a, char* name);
 
 
 /* printing functions for ASTs */
+void print_ast_init();
+void print_ast_finish();
 void print_ast_list(ast_list* r, int offset);
-
 void print_ast(ast* x, int offset);
 
 #endif

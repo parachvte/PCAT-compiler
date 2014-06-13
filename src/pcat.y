@@ -4,12 +4,12 @@
 
     #include "y.tab.h"
     #include "ast.h"
-    #include "action.h"
+    #include "routine.h"
 
     extern int yylineno;
     extern char *yytext;
 
-    //extern void action(ast* prog);
+    //extern void routine(ast* prog);
     extern int yylex();
     /* parse error */
     void yyerror ( char* s ) {
@@ -117,7 +117,7 @@ start:
     program {
         //print_ast($1, 0);
         struct ast* prog = $1;
-        action(prog);
+        routine(prog);
     }
 ;
 /* 1. Program */

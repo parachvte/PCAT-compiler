@@ -1,19 +1,19 @@
-#include "gen.h"
-
-#include "global.h"
-#include "table.h"
-#include "ast.h"
-#include "type.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-char * main_entry_name = "MainEntry";
-char * routine_prefix = "";
+#include "routine.h"
+#include "global.h"
+#include "table.h"
+#include "ast.h"
+//#include "type_check.h"
 
-FILE *code_out, *data_out, *frame_out, *tree_out;
+
+char *main_entry_name = "MainEntry";
+char *routine_prefix = "";
+
+FILE *code_out, *data_out, *frame_out;
 
 int label_count;
 char * make_label(){
@@ -265,54 +265,7 @@ void store_float( ast* x ){
     }
 }
 
-
-
-int EXTEN[1000] = {0};
-void print_ast_as_tree(ast* x,int Level,int flag)
-{
-    int i;
-    ast_list* l;
-    if(x == NULL) return;
-    for(i=0;i<Level;i++) 
-        if(EXTEN[i]&&i!=0)  
-            fprintf(tree_out,"│   ");
-        else
-            fprintf(tree_out,"    ");
-    if(flag){
-        fprintf(tree_out,"└");
-        EXTEN[Level] = 0;  
-    }
-    else{
-        fprintf(tree_out,"├");
-        EXTEN[Level] = 1;
-    }
-    fprintf(tree_out,"───");
-
-
-    if(x->tag == int_ast)
-        fprintf(tree_out,"%d\n",x->info.integer);
-    else if(x->tag == real_ast)
-        fprintf(tree_out,"%lf\n",x->info.real);
-    else if(x->tag == var_ast)
-        fprintf(tree_out,"%s\n",x->info.variable);
-    else if(x->tag == str_ast)
-        fprintf(tree_out,"%s\n",x->info.string);
-    else if(x->tag == node_ast)
-    {
-        fprintf(tree_out,"%s",ast_names[x->info.node.tag]);
-
-        fprintf(tree_out,"\n");
-        if(args(x)!=NULL)
-            for(l=args(x);l;l=l->next)
-                if(l->next)
-                    print_ast_as_tree(l->elem,Level+1,0);
-                else
-                    print_ast_as_tree(l->elem,Level+1,1);
-    }
-}
-
-
-// change: to generate intermediate code
+// To generate intermediate code
 void _gen_code( ast* x ){
 #define GO_PICK(k)          _gen_code( pick_ast(x,k) )
 #define GO_PICK_COMP(k)     _gen_code( pick_ast_comp(x,k) )
@@ -1025,23 +978,19 @@ void combine(char *s1, char *s2, char* t){
     fclose(fs1);fclose(fs2);fclose(ft);
 }
 
-void gen_code( ast* x ){
-
+void code_gen(ast* x) {
     code_out = fopen("code.s","w");
     data_out = fopen("data.s","w");
-    tree_out = fopen("tree.info","w");
-    frame_out = fopen("frame.info","w");
+    frame_out = fopen("frame.out","w");
 
     label_count = 0;
     scope_init();    
 
-    print_ast_as_tree(x,0,0);
     _gen_code(x);
 
     fclose(code_out);
     fclose(data_out);
-    fclose(tree_out);
     fclose(frame_out);
 
-    combine("code.s","data.s","pcat.s");
+    combine("code.s", "data.s", "pcat.s");
 }

@@ -1,5 +1,4 @@
-#include "type.h"
-
+#include "routine.h"
 #include "ast.h"
 #include "table.h"
 
@@ -719,7 +718,7 @@ ast* _check_type(ast* x) {
 
 /* check the type of ast. return 1 if ok, 0 if no-passed*/
 
-int typecheck(ast* x) {
+int type_check(ast* x) {
     //basic types
     basic_int  = mk_node(NamedType, cons(mk_var("basic_int"),  NULL));
     basic_real = mk_node(NamedType, cons(mk_var("basic_real"), NULL));
@@ -736,8 +735,8 @@ int typecheck(ast* x) {
 
     printf("====================Type Checking==================\n");
     _check_type(x);    
-    if ( has_error )
-        printf("Type Checking with *ERRORS*\n");
+    if (has_error)
+        printf("Type Checking *ERROR*\n");
     else
         printf("Type Checking *SUCCESSFULLY*\n");
 
