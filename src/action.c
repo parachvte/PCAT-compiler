@@ -16,7 +16,7 @@ void action(ast* prog) {
     
     int res = typecheck(prog);
     if (res) {
-      return;
+        return;
     }
 
     gen_code(prog);

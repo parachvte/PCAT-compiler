@@ -183,9 +183,11 @@ ast* _check_type(ast* x) {
     
     ast* result = no_type;
     ast* decl;
-    if ( x == NULL )
+    if (x == NULL) {
         printf("[!EMPTY!]\n");
-    else switch (x->tag){
+        return result;
+    }
+    switch (x->tag){
         case int_ast:    result = basic_int;        break;
         case real_ast:   result = basic_real;       break;
         case var_ast:    
@@ -719,13 +721,13 @@ ast* _check_type(ast* x) {
 
 int typecheck(ast* x) {
     //basic types
-    basic_int  = mk_node(NamedType, cons(mk_var("basic_int"), NULL));
+    basic_int  = mk_node(NamedType, cons(mk_var("basic_int"),  NULL));
     basic_real = mk_node(NamedType, cons(mk_var("basic_real"), NULL));
     basic_bool = mk_node(NamedType, cons(mk_var("basic_bool"), NULL));
-    basic_str  = mk_node(NamedType, cons(mk_var("basic_str"), NULL));
-    no_type    = mk_node(NamedType, cons(mk_var("no_type"), NULL));
+    basic_str  = mk_node(NamedType, cons(mk_var("basic_str"),  NULL));
+    no_type    = mk_node(NamedType, cons(mk_var("no_type"),    NULL));
     need_infer = mk_node(NamedType, cons(mk_var("need_infer"), NULL));
-    void_type  = mk_node(NamedType, cons(mk_var("void_type"), NULL));
+    void_type  = mk_node(NamedType, cons(mk_var("void_type"),  NULL));
 
     // recursively check
     has_error = 0;
@@ -741,4 +743,3 @@ int typecheck(ast* x) {
 
     return has_error;
 }
-
