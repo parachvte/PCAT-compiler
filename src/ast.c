@@ -154,8 +154,7 @@ int get_comp_id(ast* a, char* name) {
         case DeclarationBlock:
         case VariableDeclarationLine:
         case TypeDecs:
-        case ProcDecs:
-            die;
+        case ProcDecs:              die;
         case VariableDeclaration:   r("ID");r("type");r("expression");r("level");r("offset"); die;
         case TypeDec:               r("ID");r("type"); die;
         case ProcDec:               r("ID");r("formal-param-list");r("type");r("body");r("level");r("local-offset"); die;
