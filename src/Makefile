@@ -12,7 +12,7 @@ YFLAGS = -d -t -y
 LEX = flex
 PYTHON = python
 
-ROUTINES = routine.o code_style.o type_check.o table.o code_gen.o global.o
+ROUTINES = routine.o code_style.o type_check.o table.o code_gen.o
 
 all: parser
 
@@ -43,9 +43,6 @@ table.o: table.c table.h
 
 code_gen.o: code_gen.c routine.h
 	$(GCC) $(CXXFLAGS) -c code_gen.c
-
-global.o: global.c global.h
-	$(GCC) $(CXXFLAGS) -c global.c
 
 
 test:

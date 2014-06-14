@@ -4,7 +4,6 @@
 #include <string.h>
 
 #include "routine.h"
-#include "global.h"
 #include "table.h"
 #include "ast.h"
 //#include "type_check.h"
