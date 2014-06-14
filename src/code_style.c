@@ -11,6 +11,7 @@
 
 #define PO()                print_ast_code_style_offset(offset)
 
+// prefix S means `select`, so `SPRINT` means `select and print`
 #define SPRINT(k)           print_ast_code_style(pick_ast(x, k), offset);
 #define SPRINT_NEXT(k)      print_ast_code_style(pick_ast(x, k), NEXT_OFFSET);
 #define PRINT(t)            print_ast_code_style(t, offset);
