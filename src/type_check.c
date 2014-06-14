@@ -1,22 +1,18 @@
-#include "routine.h"
+/*
+Return type of expression | AST NoType
+
+1. No support for RECORD
+2. Variables/procedures/types share the same name space.
+   it's sanity has not been carefully verified.
+3. Forward reference is not supported now....
+*/
+
+#include <stdlib.h>
+#include <assert.h>
 #include "ast.h"
 #include "table.h"
 
-#include "stdlib.h"
-#include "assert.h"
-
-/*
- If it is an expression, it returns the type of the expression; otherwise it returns the AST NoType
- 3 basic name type: INT / REAL / BOOLEAN / STR
- 
- 
- Remaining Issus:
- 1: No support for RECORD now..
- 2: Variables/procedures/types share the same name space.
-    it's sanity has not been carefully verified.
- 3: Forward reference is not supported now....
-    
-*/
+#include "routine.h"
 
 // used for universal basic types
 ast *basic_int, *basic_real, *basic_bool, *basic_str;
@@ -139,7 +135,7 @@ void error(ast* x, const char* s){
 void show_trace(ast* x){
     //printf("Current at line %2d near \"",x->line_no);
     printf("Current at line %2d near \"",x->first_line);
-    switch (x->tag){
+    switch (x->tag) {
         case int_ast:   printf("%d",x->info.integer);               break;
         case real_ast:  printf("%f",x->info.real);                  break;
         case var_ast:   printf("%s",x->info.variable);              break;

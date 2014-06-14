@@ -17,7 +17,7 @@
 /*================================================
                 Make AST Nodes
 ================================================*/
-ast* mk_int ( const long x ) {
+ast* mk_int(const long x) {
     ast* res = (ast*) malloc(sizeof(ast));
     res->tag = int_ast;
     res->info.integer = x;
@@ -25,7 +25,7 @@ ast* mk_int ( const long x ) {
 };
 
 
-ast* mk_real ( const double x ) {
+ast* mk_real(const double x) {
     ast* res = (ast*) malloc(sizeof(ast));
     res->tag = real_ast;
     res->info.real = x;
@@ -33,7 +33,7 @@ ast* mk_real ( const double x ) {
 };
 
 
-ast* mk_var ( const char* x ) {
+ast* mk_var(const char* x) {
     ast* res = (ast*) malloc(sizeof(ast));
     res->tag = var_ast;
     res->info.variable = (char*) malloc(strlen(x)+1);
@@ -42,7 +42,7 @@ ast* mk_var ( const char* x ) {
 };
 
 
-ast* mk_str ( const char* x ) {
+ast* mk_str(const char* x) {
     ast* res = (ast*) malloc(sizeof(ast));
     res->tag = str_ast;
     res->info.variable = (char*) malloc(strlen(x)+1);
@@ -51,7 +51,7 @@ ast* mk_str ( const char* x ) {
 };
 
 // which rewrite in pcat.y to my_mk_node()
-ast* mk_node (const ast_kind tag, ast_list* args) {
+ast* mk_node(const ast_kind tag, ast_list* args) {
     ast* res = (ast*) malloc(sizeof(ast));
     res->tag = node_ast;
     res->info.node.tag = tag;
