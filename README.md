@@ -39,3 +39,15 @@ Main goal:
 * Besides, if there are some errors, print it out, with line number & column number.
 
 * For errors, try you best to ignore it and go on. 
+
+### Part.2 Parser
+
+* Parsing the tokens recognized from Lexer (with Bison)
+
+* Make a Abstract Semantic Tree (AST)
+
+* Code style correct based on AST
+
+* Type checking based on AST
+
+* Code generation
