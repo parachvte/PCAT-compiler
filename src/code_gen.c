@@ -35,10 +35,10 @@ void load_int( ast* x, char* reg ){
             fprintf(code_out,"\t movl %s, %s\n",src,reg);
             break;
         case Var:            
-            if ( same_name(ast_var(pick_ast(x,0)),"TRUE") ){
+            if ( !strcmp(ast_var(pick_ast(x,0)),"TRUE") ){
                 src = "$1";
                 level_diff = 0;
-            }else if ( same_name(ast_var(pick_ast(x,0)),"FALSE") ){
+            }else if ( !strcmp(ast_var(pick_ast(x,0)),"FALSE") ){
                 src = "$0";
                 level_diff = 0;
             }else{
@@ -146,9 +146,9 @@ void load_float( ast* x ){
             level_diff = ast_int( pick_ast_comp(x,"level-diff") ); 
             assert(level_diff>=0);
 
-            if ( same_name(ast_str(pick_ast_comp(x,"type")),"basic_int") )
+            if ( !strcmp(ast_str(pick_ast_comp(x,"type")),"basic_int") )
                 opr = opr_load_int;
-            else if ( same_name(ast_str(pick_ast_comp(x,"type")),"basic_int") )
+            else if ( !strcmp(ast_str(pick_ast_comp(x,"type")),"basic_int") )
                 opr = opr_load_float;
             else 
                 assert(0);
@@ -166,9 +166,9 @@ void load_float( ast* x ){
         case BinOpExp:
             offset = ast_int( pick_ast_comp(x,"offset") );
             t = pick_ast_comp(x,"type");
-            if ( same_name(ast_str(pick_ast_comp(t,"ID")),"basic_int") )
+            if ( !strcmp(ast_str(pick_ast_comp(t,"ID")),"basic_int") )
                 opr = opr_load_int;
-            else if ( same_name(ast_str(pick_ast_comp(t,"ID")),"basic_real") )
+            else if ( !strcmp(ast_str(pick_ast_comp(t,"ID")),"basic_real") )
                 opr = opr_load_float;
             else
                 assert(0);
@@ -178,9 +178,9 @@ void load_float( ast* x ){
         case UnOpExp:
             offset = ast_int( pick_ast_comp(x,"offset") );
             t = pick_ast_comp(x,"type");
-            if ( same_name(ast_str(pick_ast_comp(t,"ID")),"basic_int") )
+            if ( !strcmp(ast_str(pick_ast_comp(t,"ID")),"basic_int") )
                 opr = opr_load_int;
-            else if ( same_name(ast_str(pick_ast_comp(t,"ID")),"basic_real") )
+            else if ( !strcmp(ast_str(pick_ast_comp(t,"ID")),"basic_real") )
                 opr = opr_load_float;
             else
                 assert(0);
@@ -488,9 +488,9 @@ void _gen_code( ast* x ){
                                 case ReadStatement:
                                     FOREACH(pick_ast_comp(x,"lvalue-list")){                        
                                         char* t_name = ast_str( pick_ast_comp(pick_ast_comp(l->elem,"type"),"ID") );
-                                        if ( same_name(t_name,"basic_int") )
+                                        if ( !strcmp(t_name,"basic_int") )
                                             fprintf(code_out,"\t call %sread_int\n",routine_prefix);
-                                        else if ( same_name(t_name,"basic_real") )
+                                        else if ( !strcmp(t_name,"basic_real") )
                                             fprintf(code_out,"\t call %sread_real\n",routine_prefix);
                                         else
                                             assert(0);
@@ -504,13 +504,13 @@ void _gen_code( ast* x ){
                                         fprintf(code_out,"\t push %%eax\n");
 
                                         char* t_name = ast_str( pick_ast_comp(pick_ast_comp(l->elem,"type"),"ID") );
-                                        if ( same_name(t_name,"basic_int") )
+                                        if ( !strcmp(t_name,"basic_int") )
                                             fprintf(code_out,"\t call %sprint_int\n",routine_prefix);
-                                        else if ( same_name(t_name,"basic_real") )
+                                        else if ( !strcmp(t_name,"basic_real") )
                                             fprintf(code_out,"\t call %sprint_real\n",routine_prefix);
-                                        else if ( same_name(t_name,"basic_str") )
+                                        else if ( !strcmp(t_name,"basic_str") )
                                             fprintf(code_out,"\t call %sprint_str\n",routine_prefix);
-                                        else if ( same_name(t_name,"basic_bool") )
+                                        else if ( !strcmp(t_name,"basic_bool") )
                                             fprintf(code_out,"\t call %sprint_bool\n",routine_prefix);
                                         else
                                             assert(0);
@@ -661,7 +661,7 @@ L3;
                                         // value of two sub-expr
                                         GO_PICK(1);
                                         GO_PICK(2);
-                                        if ( same_name(ast_str(pick_ast(t,0)),"basic_int") ){
+                                        if ( !strcmp(ast_str(pick_ast(t,0)),"basic_int") ){
                                             load_int(pick_ast(x,1),"%eax");
                                             load_int(pick_ast(x,2),"%ecx");
 
@@ -675,7 +675,7 @@ L3;
                                                 assert(0); // shouldn't be here!
 
                                             store_int("%eax",x);
-                                        }else if ( same_name(ast_str(pick_ast(t,0)),"basic_real") ){
+                                        }else if ( !strcmp(ast_str(pick_ast(t,0)),"basic_real") ){
                                             load_float(pick_ast(x,1));
                                             load_float(pick_ast(x,2));
 
@@ -697,7 +697,7 @@ L3;
                                         // value of two sub-expr
                                         GO_PICK(1);
                                         GO_PICK(2);
-                                        if ( same_name(ast_str(pick_ast(t,0)),"basic_int") ){
+                                        if ( !strcmp(ast_str(pick_ast(t,0)),"basic_int") ){
                                             load_int(pick_ast(x,1),"%eax");
                                             load_int(pick_ast(x,2),"%ecx");
 
@@ -719,7 +719,7 @@ L3;
                                         // value of two sub-expr
                                         GO_PICK(1);
                                         GO_PICK(2);
-                                        if ( same_name(ast_str(pick_ast(t,0)),"basic_real") ){
+                                        if ( !strcmp(ast_str(pick_ast(t,0)),"basic_real") ){
                                             load_float(pick_ast(x,1));
                                             load_float(pick_ast(x,2));
 
@@ -738,8 +738,8 @@ L3;
                                         // value of two sub-expr
                                         GO_PICK(1);
                                         GO_PICK(2);
-                                        if ( same_name(ast_str(pick_ast(t1,0)),"basic_int") && 
-                                                same_name(ast_str(pick_ast(t2,0)),"basic_int") ){
+                                        if ( !strcmp(ast_str(pick_ast(t1,0)),"basic_int") && 
+                                                !strcmp(ast_str(pick_ast(t2,0)),"basic_int") ){
                                             load_int(pick_ast(x,1),"%eax");
                                             load_int(pick_ast(x,2),"%ecx");                            
 
@@ -826,7 +826,7 @@ L3;
                                     GO_PICK(1);
                                     if ( tag(pick_ast_comp(x,"unop")) == UPlus ||
                                             tag(pick_ast_comp(x,"unop")) == UMinus ){
-                                        if ( same_name(ast_str(pick_ast(t,0)),"basic_int") ){
+                                        if ( !strcmp(ast_str(pick_ast(t,0)),"basic_int") ){
                                             load_int(pick_ast(x,1),"%eax");
 
                                             if ( tag(pick_ast_comp(x,"unop")) == UPlus )
@@ -835,7 +835,7 @@ L3;
                                                 fprintf(code_out,"\t negl %%eax\n");
 
                                             store_int("%eax",x);
-                                        }else if ( same_name(ast_str(pick_ast(t,0)),"basic_real") ){
+                                        }else if ( !strcmp(ast_str(pick_ast(t,0)),"basic_real") ){
                                             load_float(pick_ast(x,1));
 
                                             if ( tag(pick_ast_comp(x,"unop")) == UPlus )

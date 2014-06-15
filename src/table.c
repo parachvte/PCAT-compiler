@@ -123,7 +123,3 @@ ast* lookup(const char* key, int* target_level) {
 int curr_level() {
     return scope_top->level;
 }
-
-int same_name(const char * a, const char * b ){
-    return strcmp(a, b) == 0;
-}

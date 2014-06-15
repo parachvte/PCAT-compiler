@@ -293,11 +293,11 @@ ast* _check_type(ast* x) {
                     break;
                 case NamedType:
                     id = ast_var(pick_ast_comp(x,"ID"));
-                    if ( same_name(id,"INT") || same_name(id,"INTEGER") || same_name(id,"basic_int") )
+                    if ( !strcmp(id,"INT") || !strcmp(id,"INTEGER") || !strcmp(id,"basic_int") )
                         result = basic_int;
-                    else if ( same_name(id,"REAL") || same_name(id,"basic_real") )
+                    else if ( !strcmp(id,"REAL") || !strcmp(id,"basic_real") )
                         result = basic_real;
-                    else if ( same_name(id,"BOOLEAN") || same_name(id,"basic_bool") )
+                    else if ( !strcmp(id,"BOOLEAN") || !strcmp(id,"basic_bool") )
                         result = basic_bool;
                     else{
                         nx = lookup( id, NULL );
@@ -638,7 +638,7 @@ ast* _check_type(ast* x) {
                     break;
                 case Var:                    
                     id = ast_var(pick_ast_comp(x,"ID"));                    
-                    if ( same_name(id,"TRUE") || same_name(id,"FALSE") ){
+                    if ( !strcmp(id,"TRUE") || !strcmp(id,"FALSE") ){
                         result = basic_bool;
                         append_ast(x,result);
                     }else{
