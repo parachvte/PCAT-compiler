@@ -172,7 +172,7 @@ void print_ast_code_style(ast* x, int offset) {
                     P("(");SPRINT(1);P(" ");SPRINT(0);P(" ");SPRINT(2);P(")");
                     break;
                 case UnOpExp:
-                    P("(");SPRINT(0);P(" ");SPRINT(1);P(")");                 
+                    P("(");SPRINT(0);P(" ");SPRINT(1);P(")"); 
                     break;
                 case LvalExp:
                     SPRINT(0);
