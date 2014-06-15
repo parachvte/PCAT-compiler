@@ -236,7 +236,7 @@ ast* _check_type(ast* x) {
                     break;
                 case VariableDeclaration:
                     // append level/offset
-                    append_ast(x,mk_int(curr_level()));
+                    append_ast(x,mk_int(CUR_LEVEL));
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
 
                     // real works
@@ -256,7 +256,7 @@ ast* _check_type(ast* x) {
                             if ( t1 != t2 )
                                 error(x,"Type conflict");
                     decl = lookup(id,&level);
-                    if ( decl && !(level<curr_level()) ){
+                    if ( decl && !(level<CUR_LEVEL) ){
                         error(x,"Name conflict");
                     }else
                         insert( id, x );
@@ -284,7 +284,7 @@ ast* _check_type(ast* x) {
                     SCOPE_PUSH;
                     CURR_RETURN_TYPE = t2;
                     // append level
-                    append_ast(x,mk_int(curr_level()));
+                    append_ast(x,mk_int(CUR_LEVEL));
                     GO_PICK_COMP("formal-param-list");  //check formal list, adding to scope
                     GO_PICK_COMP("body");  //check procedure body
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
@@ -338,15 +338,15 @@ ast* _check_type(ast* x) {
                 case Param:
                     id = ast_var(pick_ast_comp(x,"ID"));
                     decl = lookup(id,&level);
-                    if ( decl && !(level < curr_level() ) ){
+                    if ( decl && !(level < CUR_LEVEL ) ){
                         error(x,"Name conflict is not allowed");
-                        printf("%d %d\n",level,curr_level());
+                        printf("%d %d\n",level,CUR_LEVEL);
                     }else{
                         t1 = GO_PICK(1);
                         insert(id,x);
                         result = t1;
                     }
-                    append_ast(x,mk_int(curr_level()));
+                    append_ast(x,mk_int(CUR_LEVEL));
                     append_ast(x,mk_int(TAKE_PARAM_OFFSET));
                     break;
                 case AssignStatement:
@@ -384,7 +384,7 @@ ast* _check_type(ast* x) {
                     }
 
                     append_ast(x,result);
-                    append_ast(x,mk_int(curr_level()-pick_ast_comp(decl,"level")->info.integer));
+                    append_ast(x,mk_int(CUR_LEVEL-pick_ast_comp(decl,"level")->info.integer));
                     break;
                 case ReadStatement:
                     FOREACH(pick_ast_comp(x,"lvalue-list")){
@@ -585,7 +585,7 @@ ast* _check_type(ast* x) {
                     }
                     
                     append_ast(x,result);
-                    append_ast(x,mk_int(curr_level()-ast_int(pick_ast_comp(decl,"level"))));
+                    append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_comp(decl,"level"))));
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     break;
                 case RecordExp:
@@ -649,7 +649,7 @@ ast* _check_type(ast* x) {
                             result = GO( pick_ast_comp(decl,"type") );
                         }
                         append_ast(x,result);                        
-                        append_ast(x,mk_int(curr_level()-ast_int(pick_ast_comp(decl,"level"))));
+                        append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_comp(decl,"level"))));
                         append_ast(x,mk_int(ast_int(pick_ast_comp(decl,"offset"))));                        
                     }
                     

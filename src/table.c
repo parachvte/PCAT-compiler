@@ -11,10 +11,6 @@
 /*****************************************************
               Operations on pair 
 *****************************************************/
-typedef struct Pair {
-    char* key;
-    ast* value;
-} Pair;
 
 /** Construct function */
 Pair* new_pair(const char * key, ast* value) {    
@@ -28,11 +24,6 @@ Pair* new_pair(const char * key, ast* value) {
 /*****************************************************
               Operations on table
 *****************************************************/
-typedef struct Table {
-    Pair* elem;
-    struct Table* next;
-} Table;
-
 Table* new_table() {
     // Init a table header (header don't actually store any information)
     Table* t = malloc(sizeof(Table));
@@ -68,15 +59,8 @@ struct ast* table_lookup(Table* t, const char *key) {
 }
 
 /*****************************************************
-              Operations on scope
+              Operations on Scope
 *****************************************************/
-typedef struct Scope {  // A Stack
-    Table* table;
-    struct Scope* father;
-    int level;
-} Scope;
-
-Scope* scope_top;
 
 /** Construct function */
 Scope* new_scope(Table* table, Scope* father, int level) {
@@ -118,8 +102,4 @@ ast* lookup(const char* key, int* target_level) {
     }
     target_level = NULL;
     return NULL;
-}
-
-int curr_level() {
-    return scope_top->level;
 }

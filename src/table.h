@@ -1,22 +1,34 @@
 #ifndef _TABLE_H_
 #define _TABLE_H_
 
-
 #include "ast.h"
 
-int same_name(const char * a, const char * b);
+/** Definitions */
+typedef struct Pair {
+    char* key;
+    ast* value;
+} Pair;
 
-/* Scope initialize */
+typedef struct Table {
+    Pair* elem;
+    struct Table* next;
+} Table;
+
+typedef struct Scope {
+    Table* table;
+    struct Scope* father;
+    int level;
+} Scope;
+
+Scope* scope_top;
+
+#define CUR_LEVEL (scope_top->level)
+
+/** Functions */
 void scope_init();
-
 void begin_scope();
-
 void end_scope();
-
-void insert(const char * key, ast* binding);
-
-ast* lookup(const char* key, int* p_level);
-
-int curr_level();
+void insert(const char *key, ast* value);
+ast* lookup(const char *key, int* target_level);
 
 #endif
