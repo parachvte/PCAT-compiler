@@ -8,114 +8,122 @@
 #include "table.h"
 #include <string.h>
 
-/* Structure Pair, Pair list, Table */
-typedef struct pair {
+/*****************************************************
+              Operations on pair 
+*****************************************************/
+typedef struct Pair {
     char* key;
     ast* value;
-} pair;
+} Pair;
 
-typedef struct pair_list {
-    pair* elem;
-    struct pair_list* next;
-} pair_list;
-
-typedef struct table {
-    pair_list* list;
-} table;
-
-
-table* new_table() {
-    table* t = malloc(sizeof(table)); // init a table header
-    return t;
-}
-
-pair_list* new_pair_list(pair* elem, pair_list* next) {
-    pair_list* pl = malloc(sizeof(pair_list));
-    pl->elem = elem;
-    pl->next = next;
-    return pl;
-}
-
-pair* new_pair( const char * key, ast* value ){    
-    pair* p = malloc( sizeof(pair) );
-    p->key = malloc( 1 + strlen(key) );
-    strcpy(p->key,key);
+/** Construct function */
+Pair* new_pair(const char * key, ast* value) {    
+    Pair* p = malloc(sizeof(Pair));
+    p->key = malloc(strlen(key) + 1);
+    strcpy(p->key, key);
     p->value = value;
     return p;
 }
 
-int same_name(const char * a, const char * b ){
-    return strcmp(a, b) == 0;
+/*****************************************************
+              Operations on table
+*****************************************************/
+typedef struct PairList {
+    Pair* elem;
+    struct PairList* next;
+} PairList;
+typedef struct Table {
+    PairList* list;
+} Table;
+
+Table* new_table() {
+    Table* t = malloc(sizeof(Table)); // init a table header
+    return t;
 }
 
-struct ast* table_lookup( table* t, const char * key ){
-    pair_list* pl;
-    for( pl = t->list; pl ; pl = pl->next ){
-        pair* p = pl->elem;
-        if ( same_name(p->key, key) )
+/**
+ * Insert a new `struct pair` into table.
+ *
+ * Don't check if the key to be inserted is exists already
+ */
+void table_insert(Table* t, const char* key, ast* value) {
+    Pair* p = new_pair(key, value);
+    PairList* new_header = malloc(sizeof(PairList));
+    new_header->elem = p;
+    new_header->next = t->list;
+    t->list = new_header;
+}
+
+/**
+ * look up `key` in Table `t`
+ * @return ast|NULL
+ */
+struct ast* table_lookup(Table* t, const char *key) {
+    for (PairList* i = t->list; i; i = i->next) {
+        Pair* p = i->elem;
+        if (!strcmp(p->key, key))
             return p->value;
     }
     return NULL;
 }
 
-void table_insert ( table* t, const char* key, ast* binding ){
-    // don't check if key is already in table...
-    pair* p = new_pair(key,binding);
-    t->list = new_pair_list( p, t->list );
-}
+/*****************************************************
+              Operations on scope
+*****************************************************/
+typedef struct Scope {  // A Stack
+    Table* table;
+    struct Scope* father;
+    int level;
+} Scope;
 
-////////////////////////
-// multi-scope 
-////////////////////////
+Scope* scope_top;
 
-typedef struct scope{
-    table*              t;
-    struct scope*       next;
-    int                 level;
-}scope;
-
-scope* new_scope( table* t, scope* next, int level ){
-    scope* s = malloc(sizeof(scope));
-    s->t = t;
-    s->next = next;
+/** Construct function */
+Scope* new_scope(Table* table, Scope* father, int level) {
+    Scope* s = malloc(sizeof(Scope));
+    s->table = table;
+    s->father = father;
     s->level = level;
     return s;
 }
 
-scope* scope_head;
-
-void scope_init(){
-    scope_head = new_scope(NULL, NULL, 0);
+void scope_init() {
+    scope_top = new_scope(NULL, NULL, 0);
 }
 
-void begin_scope(){
-    scope_head = new_scope(new_table(), scope_head, scope_head->level+1);
+void begin_scope() { // Push to the top of stack
+    scope_top = new_scope(new_table(), scope_top, scope_top->level + 1);
 }
 
-void end_scope(){
-    scope_head = scope_head->next;
+void end_scope() { // Pop out of stack
+    scope_top = scope_top->father;
 }
 
-void insert( const char * key, ast* binding ){
-    table_insert(scope_head->t,key,binding);
+void insert(const char *key, ast* value) {
+    table_insert(scope_top->table, key, value);
 }
 
-ast* lookup( const char* key, int* p_level ){
-    // return "ast*" the value
-    // store level in "*p_level" iff p_level != NULL
-    scope* s = scope_head;
-    ast* a;
-    for(; s->level > 0; s = s->next ){
-        a = table_lookup(s->t,key);
-        if ( a != NULL ){
-            if ( p_level ) *p_level = s->level;
-            return a;
+/**
+ * look up `key` in Scopes 
+ * @return ast|NULL
+ * ``
+ */
+ast* lookup(const char* key, int* target_level) {
+    for (Scope* i = scope_top; i->level; i = i->father) {
+        ast* res = table_lookup(i->table, key);
+        if (res) {
+            if (target_level) *target_level = i->level;
+            return res;
         }
     }
-    if ( p_level ) p_level = 0;
+    if (target_level) target_level = 0;
     return NULL;
 }
 
-int curr_level(){
-    return scope_head->level;
+int curr_level() {
+    return scope_top->level;
+}
+
+int same_name(const char * a, const char * b ){
+    return strcmp(a, b) == 0;
 }
