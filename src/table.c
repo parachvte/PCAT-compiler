@@ -28,30 +28,30 @@ Pair* new_pair(const char * key, ast* value) {
 /*****************************************************
               Operations on table
 *****************************************************/
-typedef struct PairList {
-    Pair* elem;
-    struct PairList* next;
-} PairList;
 typedef struct Table {
-    PairList* list;
+    Pair* elem;
+    struct Table* next;
 } Table;
 
 Table* new_table() {
-    Table* t = malloc(sizeof(Table)); // init a table header
+    // Init a table header (header don't actually store any information)
+    Table* t = malloc(sizeof(Table));
+    t->elem = NULL;
+    t->next = NULL;
     return t;
 }
 
 /**
- * Insert a new `struct pair` into table.
+ * Insert a new `struct pair` into table `*t`
  *
- * Don't check if the key to be inserted is exists already
+ * Don't check if the key to be inserted exists already or not.
  */
-void table_insert(Table* t, const char* key, ast* value) {
+void table_insert(Table** t, const char* key, ast* value) {
     Pair* p = new_pair(key, value);
-    PairList* new_header = malloc(sizeof(PairList));
+    Table* new_header = malloc(sizeof(Table));
     new_header->elem = p;
-    new_header->next = t->list;
-    t->list = new_header;
+    new_header->next = *t;
+    *t = new_header;
 }
 
 /**
@@ -59,7 +59,7 @@ void table_insert(Table* t, const char* key, ast* value) {
  * @return ast|NULL
  */
 struct ast* table_lookup(Table* t, const char *key) {
-    for (PairList* i = t->list; i; i = i->next) {
+    for (Table* i = t; i->elem; i = i->next) {
         Pair* p = i->elem;
         if (!strcmp(p->key, key))
             return p->value;
@@ -100,23 +100,23 @@ void end_scope() { // Pop out of stack
 }
 
 void insert(const char *key, ast* value) {
-    table_insert(scope_top->table, key, value);
+    table_insert(&scope_top->table, key, value);
 }
 
 /**
  * look up `key` in Scopes 
  * @return ast|NULL
- * ``
+ * `target_level` will be changed
  */
 ast* lookup(const char* key, int* target_level) {
     for (Scope* i = scope_top; i->level; i = i->father) {
         ast* res = table_lookup(i->table, key);
         if (res) {
-            if (target_level) *target_level = i->level;
+            *target_level = i->level;
             return res;
         }
     }
-    if (target_level) target_level = 0;
+    target_level = NULL;
     return NULL;
 }
 
