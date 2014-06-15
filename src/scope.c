@@ -1,12 +1,12 @@
 /**
- * Look-up Table
+ * Variable Scope Def
  *
  * File     : table.c
  * Author   : Ryannnnnnn
  */
 
-#include "table.h"
 #include <string.h>
+#include "scope.h"
 
 /*****************************************************
               Operations on pair 

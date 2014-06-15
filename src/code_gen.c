@@ -4,9 +4,7 @@
 #include <string.h>
 
 #include "routine.h"
-#include "table.h"
 #include "ast.h"
-//#include "type_check.h"
 
 
 char *main_entry_name = "MainEntry";
@@ -983,7 +981,6 @@ void code_gen(ast* x) {
     frame_out = fopen("frame.out","w");
 
     label_count = 0;
-    scope_init();    
 
     _gen_code(x);
 

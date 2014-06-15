@@ -10,7 +10,7 @@ Return type of expression | AST NoType
 #include <stdlib.h>
 #include <assert.h>
 #include "ast.h"
-#include "table.h"
+#include "scope.h"
 
 #include "routine.h"
 
