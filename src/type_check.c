@@ -32,33 +32,33 @@ void print_repr(ast* x){
         case str_ast:   break;
         case node_ast: {
                 switch (x->info.node.tag){
-                    case Program: p("PROGRAM IS\n");    break;
-                    case Body: p("BEGIN\n");         break;
-                    case DeclarationBlock:                   break;
+                    case Program:                       p("PROGRAM IS\n");break;
+                    case Body: p("BEGIN\n");            break;
+                    case DeclarationBlock:              break;
                     case VariableDeclarationLine:       break;
                     case TypeDecs:                      break;
                     case ProcDecs:                      break;
                     case VariableDeclaration:p("VAR");  break;
                     case TypeDec:p("TYPE");             break;
                     case ProcDec: p("PROCEDURE");       break;
-                    case NamedType: GO_PICK(0);          break;
-                    case ArrayType: p("ARRAY OF");       break;
-                    case RecordType:p("RECORD");         break;
-                    //case NoType:p("[No Type]");          break;
+                    case NamedType: GO_PICK(0);         break;
+                    case ArrayType: p("ARRAY OF");      break;
+                    case RecordType:p("RECORD");        break;
+                    //case NoType:p("[No Type]");         break;
                     case CompList:                      break;
                     case Comp:p(" : ");                 break;
                     case FormalParamList:               break;
                     case Param:p(" : ");                break;
-                    case AssignStatement:p(" := ");            break;
-                    case CallStatement:p("(");                 break;
-                    case ReadStatement:p("READ");              break;
-                    case WriteStatement:p("WRITE");            break;
-                    case IfStatement:p("IF");                  break;
-                    case WhileStatement:p("WHILE");            break;    
-                    case LoopStatement:p("LOOP");              break;
-                    case ForStatement:p("FOR");                break;
-                    case ExitStatement:p("EXIT");              break;
-                    case ReturnStatement:p("RETURN");             break;
+                    case AssignStatement:p(" := ");     break;
+                    case CallStatement:p("(");          break;
+                    case ReadStatement:p("READ");       break;
+                    case WriteStatement:p("WRITE");     break;
+                    case IfStatement:p("IF");           break;
+                    case WhileStatement:p("WHILE");     break;    
+                    case LoopStatement:p("LOOP");       break;
+                    case ForStatement:p("FOR");         break;
+                    case ExitStatement:p("EXIT");       break;
+                    case ReturnStatement:p("RETURN");   break;
                     case StatementBlock:                break;
                     case ExprList:                      break;
                     case BinOpExp:GO_PICK(0);           break;
@@ -715,7 +715,7 @@ ast* _check_type(ast* x) {
 /* check the type of ast. return 1 if ok, 0 if no-passed*/
 
 int type_check(ast* x) {
-    //basic types
+    // Basic types
     basic_int  = mk_node(NamedType, cons(mk_var("basic_int"),  NULL));
     basic_real = mk_node(NamedType, cons(mk_var("basic_real"), NULL));
     basic_bool = mk_node(NamedType, cons(mk_var("basic_bool"), NULL));
@@ -724,7 +724,7 @@ int type_check(ast* x) {
     need_infer = mk_node(NamedType, cons(mk_var("need_infer"), NULL));
     void_type  = mk_node(NamedType, cons(mk_var("void_type"),  NULL));
 
-    // recursively check
+    // Check
     has_error = 0;
     scope_init();    
     scope_offset_top = 0;

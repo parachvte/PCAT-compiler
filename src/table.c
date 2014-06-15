@@ -1,40 +1,36 @@
+/**
+ * Look-up Table
+ *
+ * File     : table.c
+ * Author   : Ryannnnnnn
+ */
+
 #include "table.h"
 #include <string.h>
 
-/****************************
-look-up table
+/* Structure Pair, Pair list, Table */
+typedef struct pair {
+    char* key;
+    ast* value;
+} pair;
 
+typedef struct pair_list {
+    pair* elem;
+    struct pair_list* next;
+} pair_list;
 
-_REAL MAN_ don't release the malloc-ed memory...
-*****************************/
-
-
-////////////////////////
-// look-up table
-////////////////////////
-
-typedef struct table{
-    struct pair_list*   list;
+typedef struct table {
+    pair_list* list;
 } table;
 
 
-typedef struct pair_list{
-    struct pair*        elem;
-    struct pair_list*   next;
-} pair_list;
-
-typedef struct pair{
-    char*               key;
-    struct ast*         value;
-} pair;
-
-table* new_table(){
-    table* t = malloc( sizeof(pair_list) );
+table* new_table() {
+    table* t = malloc(sizeof(table)); // init a table header
     return t;
 }
 
-pair_list* new_pair_list( pair* elem, pair_list* next ){
-    pair_list* pl = malloc( sizeof(pair_list) );
+pair_list* new_pair_list(pair* elem, pair_list* next) {
+    pair_list* pl = malloc(sizeof(pair_list));
     pl->elem = elem;
     pl->next = next;
     return pl;
@@ -89,8 +85,7 @@ scope* new_scope( table* t, scope* next, int level ){
 scope* scope_head;
 
 void scope_init(){
-    scope_head = new_scope(NULL,NULL,0);
-    // the first reasonble scope would be scope 1
+    scope_head = new_scope(NULL, NULL, 0);
 }
 
 void begin_scope(){

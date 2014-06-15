@@ -6,6 +6,7 @@
 
 int same_name(const char * a, const char * b);
 
+/* Scope initialize */
 void scope_init();
 
 void begin_scope();
