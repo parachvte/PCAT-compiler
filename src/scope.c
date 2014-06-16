@@ -24,8 +24,11 @@ Pair* new_pair(const char * key, ast* value) {
 /*****************************************************
               Operations on table
 *****************************************************/
+/* Initialize a table header
+ * (header don't actually store any information)
+ * @return Table
+ */
 Table* new_table() {
-    // Init a table header (header don't actually store any information)
     Table* t = malloc(sizeof(Table));
     t->elem = NULL;
     t->next = NULL;
@@ -49,7 +52,7 @@ void table_insert(Table** t, const char* key, ast* value) {
  * look up `key` in Table `t`
  * @return ast|NULL
  */
-struct ast* table_lookup(Table* t, const char *key) {
+ast* table_lookup(Table* t, const char *key) {
     for (Table* i = t; i->elem; i = i->next) {
         Pair* p = i->elem;
         if (!strcmp(p->key, key))
