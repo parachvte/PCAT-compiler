@@ -24,9 +24,9 @@ int error_count;
 
 #define PRINT_REPR(k)           print_repr(pick_ast(x, k))
 
-#define CHECK_K(k)            check(pick_ast(x, k))
-#define CHECK_BY_NAME(k)    check(pick_ast_by_name(x, k))
-#define CHECK(e)               check(e)
+#define CHECK_K(k)              check(pick_ast(x, k))
+#define CHECK_BY_NAME(k)        check(pick_ast_by_name(x, k))
+#define CHECK(x)                check(x)
 
 /***************************************************************
                     Print Representation
@@ -159,21 +159,32 @@ notes:
     
 */
 
-ast* scope_return_type[1000];
-int scope_offset[1000]; // offset
+#define MAX_SCOPE_SIZE 998
+ast* scope_return_type[MAX_SCOPE_SIZE];
+int scope_offset[MAX_SCOPE_SIZE]; // offset
 int scope_offset_top;
-#define SCOPE_PUSH scope_offset[scope_offset_top++] = 0
-#define SCOPE_POP  scope_offset[--scope_offset_top] = 0
-#define CURR_LOCAL_OFFSET scope_offset[scope_offset_top-1]
-#define CURR_RETURN_TYPE  scope_return_type[scope_offset_top-1]
-#define TAKE_LOCAL_OFFSET (CURR_LOCAL_OFFSET-=4,CURR_LOCAL_OFFSET)
+#define SCOPE_PUSH          scope_offset[scope_offset_top++] = 0
+#define SCOPE_POP           scope_offset[--scope_offset_top] = 0
+#define CURR_LOCAL_OFFSET   scope_offset[scope_offset_top - 1]
+#define CURR_RETURN_TYPE    scope_return_type[scope_offset_top - 1]
 
+/* local offset */
+int _take_local_offset() {
+    CURR_LOCAL_OFFSET -= 4;
+    return CURR_LOCAL_OFFSET;
+}
+#define TAKE_LOCAL_OFFSET   _take_param_offset()
+
+/* Parameter offset */
 int param_offset;
-#define TAKE_PARAM_OFFSET (param_offset+=4,param_offset)
+int _take_param_offset() {
+    param_offset += 4;
+    return param_offset;
+}
+#define TAKE_PARAM_OFFSET   _take_param_offset() 
 
 /** Check */
 ast* check(ast* x) {
-
     //back_trace(x);
     
     ast* result = no_type;
@@ -182,7 +193,7 @@ ast* check(ast* x) {
         printf("[!EMPTY!]\n");
         return result;
     }
-    switch (x->tag){
+    switch (x->tag) {
         case int_ast:
             result = basic_int;
             break;
@@ -190,41 +201,42 @@ ast* check(ast* x) {
             result = basic_real;
             break;
         case var_ast:
-            decl = lookup(x->info.variable,NULL);
-            if ( decl )
-                result = decl;
+            decl = lookup(ast_var(x), NULL);
+            if (decl) result = decl;
             break;
-        case str_ast:    result = basic_str;        break;
+        case str_ast:
+            result = basic_str;
+            break;
         case node_ast : {
             ast_list* l;           // loop variable
             char* id;              // identifier
-            ast *t0,*t1,*t2,*t3;   // temp
-            int level;             
+            ast *t0, *t1, *t2, *t3;   // temp
+            int level;
             ast *nx;
             ast *ap,*fp;
             ast_list * lap,*lfp;
             ast_list *ail;
             ast *array_elem_type;
             switch (x->info.node.tag){
-                case Program:    
-                    begin_scope();    
+                case Program:
+                    begin_scope();
                     SCOPE_PUSH;
                     CURR_RETURN_TYPE = void_type;
-                    CHECK_BY_NAME("body");        
+                    CHECK_BY_NAME("body");
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     SCOPE_POP; 
                     end_scope();
                     break;
-                case Body:      
+                case Body:
                     CHECK_BY_NAME("declarations-list");
-                    CHECK_BY_NAME("statements-list"); 
+                    CHECK_BY_NAME("statements-list");
                     result=no_type; 
                     break;
-                case DeclarationBlock:    
-                    // order: 
-                    // 1. type  () TODO: check forwrading...  
+                case DeclarationBlock:
+                    // order:
+                    // 1. type  () TODO: check forwrading...
                     // 2. var   (forwarding type)
-                    // 3. proc  (forwarding type/var)                    
+                    // 3. proc  (forwarding type/var)
                     FOREACH(x) if (tag(ELEML)==TypeDecs) CHECK(ELEML);
                     FOREACH(x) if (tag(ELEML)==VariableDeclarationLine) CHECK(ELEML);
                     FOREACH(x) if (tag(ELEML)==ProcDecs) CHECK(ELEML);
@@ -234,7 +246,7 @@ ast* check(ast* x) {
                     break;
                 case TypeDecs:
                     FOREACH(x) CHECK(ELEML);
-                    break;       
+                    break;
                 case ProcDecs:
                     FOREACH(x) CHECK(ELEML);
                     break;
@@ -266,23 +278,23 @@ ast* check(ast* x) {
                         insert( id, x );
 
                     break;
-                case TypeDec:                
+                case TypeDec:
                     id = ast_var(pick_ast_by_name(x,"ID"));
-                    
+
                     decl = lookup(id,&level);
                     if ( !decl ){
                         insert(id,CHECK_BY_NAME("type"));
                     }else
                         error(x,"Name conflict");
                     break;
-                case ProcDec:           
+                case ProcDec:
                     id = ast_var(pick_ast_by_name(x,"ID"));
                     decl = lookup(id,&level);
                     if ( !decl ){
                         insert(id,x);
                     }else
-                        error(x,"Name conflict");                       
-                    
+                        error(x,"Name conflict");
+
                     t2 = CHECK_BY_NAME("type");  //check return type
                     begin_scope();
                     SCOPE_PUSH;
@@ -318,22 +330,16 @@ ast* check(ast* x) {
                         result = x;
                     break;
                 case RecordType:
-                /*
                     // Not Implemented!
-                */
                     break;
-                //case NoType:
-                //    result = no_type;
-                //    break;
+                /*case NoType:
+                    result = no_type;
+                    break;*/
                 case CompList:
-                /*
                     // Not Implemented!
-                */
                     break;
                 case Comp:
-                /*
                     // Not Implemented!
-                */
                     break;
                 case FormalParamList:
                     param_offset = 8;       // first(8) reserved for static links
@@ -362,7 +368,7 @@ ast* check(ast* x) {
                         error(x,"Assgining between diffrent types is not allowed");   
                     break;
                 case CallStatement:
-                    id = ast_var(pick_ast_by_name(x,"ID"));                 
+                    id = ast_var(pick_ast_by_name(x,"ID"));
                     decl = lookup(id,&level);
                     if ( !decl )
                         error(x,"Cannot find the called procedure");
@@ -393,7 +399,7 @@ ast* check(ast* x) {
                 case ReadStatement:
                     FOREACH(pick_ast_by_name(x,"lvalue-list")){
                         t0 = CHECK(ELEML);
-                        
+
                         if ( t0 != basic_int && 
                              t0 != basic_real &&
                              t0 != basic_str )
@@ -443,7 +449,7 @@ ast* check(ast* x) {
                         error(x,"End of range in FOR must be of INT type");
                     else if (t3 != basic_int)
                         error(x,"Step of range in FOR must be of INT type");
-                    
+
                     CHECK_BY_NAME("statement");
 
                     append_ast(x,pick_ast_by_name(decl,"offset"));
@@ -636,8 +642,7 @@ ast* check(ast* x) {
                 case ArrayInit:
                     break;
                 case LvalList:
-                // right??
-                    result = CHECK_K(0);
+                    result = CHECK_K(0); // todo: right?
                     break;
                 case Var:
                     id = ast_var(pick_ast_by_name(x,"ID"));
@@ -651,7 +656,7 @@ ast* check(ast* x) {
                         else{
                             result = CHECK( pick_ast_by_name(decl,"type") );
                         }
-                        append_ast(x,result);                        
+                        append_ast(x,result);
                         append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_by_name(decl,"level"))));
                         append_ast(x,mk_int(ast_int(pick_ast_by_name(decl,"offset"))));
                     }
