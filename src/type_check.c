@@ -9,9 +9,9 @@ Return type of expression | AST NoType
 
 #include <stdlib.h>
 #include <assert.h>
+
 #include "ast.h"
 #include "scope.h"
-
 #include "routine.h"
 
 /***************************************************************
@@ -22,85 +22,85 @@ ast *no_type, *need_infer, *void_type;
 
 int error_count;
 
-#define PRINT_REPR(k)           print_repr(pick_ast(x, k))
 #define P                       printf 
+
+#define PRINT_REPR(k)           print_repr(pick_ast(x, k))
+
 /***************************************************************
                     Print Representation
 ***************************************************************/
-void print_repr(ast* x){
+void print_repr(ast* x) {
     switch (x->tag){
         case int_ast:   break;
         case real_ast:  break;
-        case var_ast:   printf("%s",x->info.variable); break;
+        case var_ast:   printf("%s", ast_var(x)); break;
         case str_ast:   break;
         case node_ast: {
                 switch (x->info.node.tag){
                     case Program:                       P("PROGRAM IS\n");break;
-                    case Body: P("BEGIN\n");            break;
+                    case Body:                          P("BEGIN\n");break;
                     case DeclarationBlock:              break;
                     case VariableDeclarationLine:       break;
                     case TypeDecs:                      break;
                     case ProcDecs:                      break;
-                    case VariableDeclaration:P("VAR");  break;
-                    case TypeDec:P("TYPE");             break;
-                    case ProcDec: P("PROCEDURE");       break;
-                    case NamedType: PRINT_REPR(0);      break;
-                    case ArrayType: P("ARRAY OF");      break;
-                    case RecordType:P("RECORD");        break;
-                    //case NoType:P("[No Type]");         break;
+                    case VariableDeclaration:           P("VAR");break;
+                    case TypeDec:                       P("TYPE");break;
+                    case ProcDec:                       P("PROCEDURE");break;
+                    case NamedType:                     PRINT_REPR(0);break;
+                    case ArrayType:                     P("ARRAY OF");break;
+                    case RecordType:                    P("RECORD");break;
+                    //case NoType:                      P("[No Type]");break;
                     case CompList:                      break;
-                    case Comp:P(" : ");                 break;
+                    case Comp:                          P(" : ");break;
                     case FormalParamList:               break;
-                    case Param:P(" : ");                break;
-                    case AssignStatement:P(" := ");     break;
-                    case CallStatement:P("(");          break;
-                    case ReadStatement:P("READ");       break;
-                    case WriteStatement:P("WRITE");     break;
-                    case IfStatement:P("IF");           break;
-                    case WhileStatement:P("WHILE");     break;    
-                    case LoopStatement:P("LOOP");       break;
-                    case ForStatement:P("FOR");         break;
-                    case ExitStatement:P("EXIT");       break;
-                    case ReturnStatement:P("RETURN");   break;
+                    case Param:                         P(" : ");break;
+                    case AssignStatement:               P(" := ");break;
+                    case CallStatement:                 P("(");break;
+                    case ReadStatement:                 P("READ");break;
+                    case WriteStatement:                P("WRITE");break;
+                    case IfStatement:                   P("IF");break;
+                    case WhileStatement:                P("WHILE");break;
+                    case LoopStatement:                 P("LOOP");break;
+                    case ForStatement:                  P("FOR");break;
+                    case ExitStatement:                 P("EXIT");break;
+                    case ReturnStatement:               P("RETURN");break;
                     case StatementBlock:                break;
                     case ExprList:                      break;
-                    case BinOpExp:PRINT_REPR(0);           break;
-                    case UnOpExp:PRINT_REPR(0);            break;
+                    case BinOpExp:                      PRINT_REPR(0);break;
+                    case UnOpExp:                       PRINT_REPR(0);break;
                     case LvalExp:                       break;
-                    case CallExp:PRINT_REPR(0);            break;
+                    case CallExp:                       PRINT_REPR(0);break;
                     case RecordExp:                     break;
-                    case ArrayExp:PRINT_REPR(0);           break;
-                    case IntConst:PRINT_REPR(0);           break;
-                    case RealConst:PRINT_REPR(0);          break;
-                    case StringConst: PRINT_REPR(0);       break;
+                    case ArrayExp:                      PRINT_REPR(0);break;
+                    case IntConst:                      PRINT_REPR(0);break;
+                    case RealConst:                     PRINT_REPR(0);break;
+                    case StringConst:                   PRINT_REPR(0);break;
                     case RecordInitList:                break;
                     case RecordInit:                    break;
                     case ArrayInitList:                 break;
-                    case ArrayInit:P("OF");             break;
+                    case ArrayInit:                     P("OF");break;
                     case LvalList:                      break;
-                    case Var:PRINT_REPR(0);                break;
+                    case Var:                           PRINT_REPR(0);break;
                     case ArrayDeref:                    break;
                     case RecordDeref:                   break;
-                        
-                    case Gt:P(">");         break;
-                    case Lt:P("<");         break;
-                    case Eq:P("=");         break;
-                    case Ge:P(">=");        break;
-                    case Le:P("<=");        break;
-                    case Ne:P("<>");        break;
-                    case Plus:P("+");       break;
-                    case Minus:P("-");      break;
-                    case Times:P("*");      break;
-                    case Slash:P("/");      break;
-                    case Divide:P(" div ");    break;
-                    case Module:P(" mod ");    break;
-                    case And:P(" and ");    break;
-                    case Or:P(" or ");      break;
-                    case UPlus:P("+");      break;
-                    case UMinus:P("-");     break;
-                    case Not:P(" not ");    break;
-                    
-                    case TypeInferNeeded:           break;
+                    case Gt:                            P(">");break;
+                    case Lt:                            P("<");break;
+                    case Eq:                            P("=");break;
+                    case Ge:                            P(">=");break;
+                    case Le:                            P("<=");break;
+                    case Ne:                            P("<>");break;
+                    case Plus:                          P("+");break;
+                    case Minus:                         P("-");break;
+                    case Times:                         P("*");break;
+                    case Slash:                         P("/");break;
+                    case Divide:                        P(" div ");break;
+                    case Module:                        P(" mod ");break;
+                    case And:                           P(" and ");break;
+                    case Or:                            P(" or ");break;
+                    case UPlus:                         P("+");break;
+                    case UMinus:                        P("-");break;
+                    case Not:                           P(" not ");break;
+                    case TypeInferNeeded:               break;
                     case VoidType:                      break;
                     case EmptyStatement:                break;
                     case EmptyExpression:               break;
@@ -109,45 +109,39 @@ void print_repr(ast* x){
         };
         break;
     }
-#undef PRINT_REPR 
-#undef PRINT_REPR_NAME 
-#undef p
 }
 
 /***************************************************************
                     Print Error Info 
 ***************************************************************/
-void error(ast* x, const char* s){
+void error(ast* x, const char* err_msg) {
     error_count++;
-    printf("ERROR: at line %d near \"",x->first_line);
-    print_repr(x);    
+    printf("ERROR: at line %d near \"", x->line_no);
+    print_repr(x);
     printf("\" (");
-    
-    switch (x->tag){
+    switch (x->tag) {
         case int_ast:   break;
         case real_ast:  break;
-        case var_ast:   printf(" (%s)",x->info.variable); break;
+        case var_ast:   printf(" (%s)", ast_var(x));break;
         case str_ast:   break;
-        case node_ast:  printf("%s",ast_names[x->info.node.tag]);   break;
+        case node_ast:  printf("%s", ast_names[tag(x)]);break;
     }
-    
-    printf("): %s\n",s);
-
+    printf("): %s\n", err_msg);
     exit(1);
 }
 
 /***************************************************************
                     Print Backtrace
 ***************************************************************/
-void show_trace(ast* x){
+void back_trace(ast* x) {
     //printf("Current at line %2d near \"",x->line_no);
-    printf("Current at line %2d near \"",x->first_line);
+    printf("at line %2d near \"", x->first_line);
     switch (x->tag) {
-        case int_ast:   printf("%d",x->info.integer);               break;
-        case real_ast:  printf("%f",x->info.real);                  break;
-        case var_ast:   printf("%s",x->info.variable);              break;
-        case str_ast:   printf("%s",x->info.string);                break;
-        case node_ast:  printf("%s",ast_names[x->info.node.tag]);   break;
+        case int_ast:   printf("%d", ast_int(x));break;
+        case real_ast:  printf("%f", ast_real(x));break;
+        case var_ast:   printf("%s", ast_var(x));break;
+        case str_ast:   printf("%s", ast_str(x));break;
+        case node_ast:  printf("%s", ast_names[tag(x)]);break;
     }
     printf("\"\n");
 }
@@ -175,16 +169,16 @@ int scope_offset_top;
 int param_offset;
 #define TAKE_PARAM_OFFSET (param_offset+=4,param_offset)
 
-#define GO_PICK(k)          check( pick_ast(x,k) )
-#define GO_PICK_COMP(k)     check( pick_ast_by_name(x,k) )
-#define GO(e)               check( e )
+#define CHECK_K(k)            check(pick_ast(x, k))
+#define CHECK_BY_NAME(k)    check(pick_ast_by_name(x, k))
+#define GO(e)               check(e)
 #define FOREACH(x)          for(l=args(x);l;l=l->next)
 #define ELEM(l)             l->elem
 #define ELEML               ELEM(l)
 /** Check */
 ast* check(ast* x) {
 
-    //show_trace(x);
+    //back_trace(x);
     
     ast* result = no_type;
     ast* decl;
@@ -220,14 +214,14 @@ ast* check(ast* x) {
                     begin_scope();    
                     SCOPE_PUSH;
                     CURR_RETURN_TYPE = void_type;
-                    GO_PICK_COMP("body");        
+                    CHECK_BY_NAME("body");        
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     SCOPE_POP; 
                     end_scope();
                     break;
                 case Body:      
-                    GO_PICK_COMP("declarations-list");
-                    GO_PICK_COMP("statements-list"); 
+                    CHECK_BY_NAME("declarations-list");
+                    CHECK_BY_NAME("statements-list"); 
                     result=no_type; 
                     break;
                 case DeclarationBlock:    
@@ -255,8 +249,8 @@ ast* check(ast* x) {
 
                     // real works
                     id = ast_var(pick_ast_by_name(x,"ID"));
-                    t1 = GO_PICK_COMP("type");
-                    t2 = GO_PICK_COMP("expression");
+                    t1 = CHECK_BY_NAME("type");
+                    t2 = CHECK_BY_NAME("expression");
                     if (t1==need_infer)
                         if (t2==no_type)
                             error(x,"Cannot infer the type");
@@ -281,7 +275,7 @@ ast* check(ast* x) {
                     
                     decl = lookup(id,&level);
                     if ( !decl ){
-                        insert(id,GO_PICK_COMP("type"));
+                        insert(id,CHECK_BY_NAME("type"));
                     }else
                         error(x,"Name conflict");
                     break;
@@ -293,14 +287,14 @@ ast* check(ast* x) {
                     }else
                         error(x,"Name conflict");                       
                     
-                    t2 = GO_PICK_COMP("type");  //check return type
+                    t2 = CHECK_BY_NAME("type");  //check return type
                     begin_scope();
                     SCOPE_PUSH;
                     CURR_RETURN_TYPE = t2;
                     // append level
                     append_ast(x,mk_int(CUR_LEVEL));
-                    GO_PICK_COMP("formal-param-list");  //check formal list, adding to scope
-                    GO_PICK_COMP("body");  //check procedure body
+                    CHECK_BY_NAME("formal-param-list");  //check formal list, adding to scope
+                    CHECK_BY_NAME("body");  //check procedure body
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     SCOPE_POP;
                     end_scope();
@@ -321,7 +315,7 @@ ast* check(ast* x) {
                     }
                     break;
                 case ArrayType:
-                    t0 = GO_PICK_COMP("type"); // check inner element's type
+                    t0 = CHECK_BY_NAME("type"); // check inner element's type
                     if ( t0 == no_type )
                         ;
                     else
@@ -356,7 +350,7 @@ ast* check(ast* x) {
                         error(x,"Name conflict is not allowed");
                         printf("%d %d\n",level,CUR_LEVEL);
                     }else{
-                        t1 = GO_PICK(1);
+                        t1 = CHECK_K(1);
                         insert(id,x);
                         result = t1;
                     }
@@ -364,8 +358,8 @@ ast* check(ast* x) {
                     append_ast(x,mk_int(TAKE_PARAM_OFFSET));
                     break;
                 case AssignStatement:
-                    t0 = GO_PICK_COMP("lvalue");
-                    t1 = GO_PICK_COMP("expression");
+                    t0 = CHECK_BY_NAME("lvalue");
+                    t1 = CHECK_BY_NAME("expression");
                     if ( t0==no_type || t1 == no_type )
                         ;
                     else if ( t0 != t1 )
@@ -422,27 +416,27 @@ ast* check(ast* x) {
                     }
                     break;
                 case IfStatement:
-                    t0 = GO_PICK_COMP("expression");
+                    t0 = CHECK_BY_NAME("expression");
                     if ( t0 != basic_bool )
                         error(x,"Condition in IF must be of BOOLEAN type");
-                    GO_PICK_COMP("statement");
-                    GO_PICK_COMP("statement-else");
+                    CHECK_BY_NAME("statement");
+                    CHECK_BY_NAME("statement-else");
                     break;
                 case WhileStatement:
-                    t0 = GO_PICK_COMP("expression");
+                    t0 = CHECK_BY_NAME("expression");
                     if ( t0 != basic_bool )
                         error(x,"Condition in WHILE must be of BOOLEAN type");
-                    GO_PICK_COMP("statement");
+                    CHECK_BY_NAME("statement");
                     break;
                 case LoopStatement:
-                    GO_PICK_COMP("statement");
+                    CHECK_BY_NAME("statement");
                     break;
                 case ForStatement:
                     // For I = a to b by c do e
                     id = ast_var(pick_ast_by_name(x,"ID"));
-                    t1 = GO_PICK_COMP("expression-from");
-                    t2 = GO_PICK_COMP("expression-to");
-                    t3 = GO_PICK_COMP("expression-by");
+                    t1 = CHECK_BY_NAME("expression-from");
+                    t2 = CHECK_BY_NAME("expression-to");
+                    t3 = CHECK_BY_NAME("expression-by");
 
                     decl = lookup(id,&level);
                     if ( !decl )
@@ -454,14 +448,14 @@ ast* check(ast* x) {
                     else if (t3 != basic_int)
                         error(x,"Step of range in FOR must be of INT type");
                     
-                    GO_PICK_COMP("statement");
+                    CHECK_BY_NAME("statement");
 
                     append_ast(x,pick_ast_by_name(decl,"offset"));
                     break;
                 case ExitStatement:
                     break;
                 case ReturnStatement:
-                    t1 = GO_PICK_COMP("expression");
+                    t1 = CHECK_BY_NAME("expression");
                     t2 = CURR_RETURN_TYPE;
                     if ( t1 != t2 )
                         error(x,"This type (maybe EMPTY-TYPE) conflicts with PROCEDURE declaration");
@@ -478,8 +472,8 @@ ast* check(ast* x) {
                         handle the type of this expression.
                 */
                 case BinOpExp:
-                    t1 = GO_PICK_COMP("expression-left");
-                    t2 = GO_PICK_COMP("expression-right");
+                    t1 = CHECK_BY_NAME("expression-left");
+                    t2 = CHECK_BY_NAME("expression-right");
 
                     if ( t1==no_type || t2 == no_type )
                         ;
@@ -534,7 +528,7 @@ ast* check(ast* x) {
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     break;
                 case UnOpExp:
-                    t1 = GO_PICK_COMP("expression");                   
+                    t1 = CHECK_BY_NAME("expression");                   
                     if ( t1==no_type )
                         ; 
                     else if ( t1!=basic_int && t1!=basic_real && t1!=basic_bool )
@@ -565,7 +559,7 @@ ast* check(ast* x) {
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     break;
                 case LvalExp:
-                    result = GO_PICK_COMP("lvalue");
+                    result = CHECK_BY_NAME("lvalue");
                     append_ast(x,result);
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     break;
@@ -647,7 +641,7 @@ ast* check(ast* x) {
                     break;
                 case LvalList:
                 // right??
-                    result = GO_PICK(0);
+                    result = CHECK_K(0);
                     break;
                 case Var:
                     id = ast_var(pick_ast_by_name(x,"ID"));
@@ -668,8 +662,8 @@ ast* check(ast* x) {
 
                     break;
                 case ArrayDeref:
-                    t0 = GO_PICK_COMP("lvalue");
-                    t1 = GO_PICK_COMP("expression");
+                    t0 = CHECK_BY_NAME("lvalue");
+                    t1 = CHECK_BY_NAME("expression");
 
                     if ( t1 == no_type )
                         ;
