@@ -425,11 +425,11 @@ ast* check(ast* x) {
                     break;
                 case ForStatement:
                     // For I = a to b by c do e
-                    id = ast_var(pick_ast_comp(x,"ID")); 
-                    t1 = GO_PICK_COMP("expression-from");               
-                    t2 = GO_PICK_COMP("expression-to");                
-                    t3 = GO_PICK_COMP("expression-by");               
-                    
+                    id = ast_var(pick_ast_comp(x,"ID"));
+                    t1 = GO_PICK_COMP("expression-from");
+                    t2 = GO_PICK_COMP("expression-to");
+                    t3 = GO_PICK_COMP("expression-by");
+
                     decl = lookup(id,&level);
                     if ( !decl )
                         error(x,"Unknow index variable in FOR");
@@ -440,7 +440,7 @@ ast* check(ast* x) {
                     else if (t3 != basic_int)
                         error(x,"Step of range in FOR must be of INT type");
                     
-                    GO_PICK_COMP("statement");                     
+                    GO_PICK_COMP("statement");
 
                     append_ast(x,pick_ast_comp(decl,"offset"));
                     break;
@@ -466,7 +466,7 @@ ast* check(ast* x) {
                 case BinOpExp:
                     t1 = GO_PICK_COMP("expression-left");
                     t2 = GO_PICK_COMP("expression-right");
-                    
+
                     if ( t1==no_type || t2 == no_type )
                         ;
                     else if ( ( t1!=basic_int && t1!=basic_real && t1!=basic_bool ) ||
@@ -546,7 +546,7 @@ ast* check(ast* x) {
                                 break;
                         }
                     }
-                   
+
                     append_ast(x,result);
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     break;
@@ -555,8 +555,8 @@ ast* check(ast* x) {
                     append_ast(x,result);
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
                     break;
-                case CallExp:                    
-                    id = ast_var(pick_ast_comp(x,"ID"));                 
+                case CallExp:
+                    id = ast_var(pick_ast_comp(x,"ID"));
                     decl = lookup(id,&level);
                     if ( !decl )
                         error(x,"Cannot find the called procedure");
@@ -579,11 +579,10 @@ ast* check(ast* x) {
                             error(x,"Too many actual parameters");
                         if ( !lap && lfp )
                             error(x,"Need more actual parameters");
-                   
                         // type of procedure
                         result = GO( pick_ast_comp(decl,"type") );
                     }
-                    
+
                     append_ast(x,result);
                     append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_comp(decl,"level"))));
                     append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
@@ -591,15 +590,15 @@ ast* check(ast* x) {
                 case RecordExp:
                     error(x,"RecordExp checking not implement");
                     break;
-                case ArrayExp:                 
-                    id = ast_var(pick_ast_comp(x,"ID"));                    
+                case ArrayExp:
+                    id = ast_var(pick_ast_comp(x,"ID"));
                     decl = lookup(id,&level);
                     if ( !decl )
                         error(x,"Cannot find the ARRAY constructor's type");
-                    
-                    
+
+
                     array_elem_type = GO( pick_ast_comp(decl,"type") );
-                    
+
                     ail = args(pick_ast_comp(x,"array-init-list"));
                     for(;ail;ail=ail->next){
                         t0 = GO( pick_ast_comp(ELEM(ail),"expression-count") );
@@ -609,7 +608,7 @@ ast* check(ast* x) {
                         if ( t1 != array_elem_type )
                             error(x,"Type in constructor and type in ARRAY definition don't match");
                     }
-                    
+
                     result = decl;
                     break;
                 case IntConst:
@@ -636,8 +635,8 @@ ast* check(ast* x) {
                 // right??
                     result = GO_PICK(0);
                     break;
-                case Var:                    
-                    id = ast_var(pick_ast_comp(x,"ID"));                    
+                case Var:
+                    id = ast_var(pick_ast_comp(x,"ID"));
                     if ( !strcmp(id,"TRUE") || !strcmp(id,"FALSE") ){
                         result = basic_bool;
                         append_ast(x,result);
@@ -650,14 +649,14 @@ ast* check(ast* x) {
                         }
                         append_ast(x,result);                        
                         append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_comp(decl,"level"))));
-                        append_ast(x,mk_int(ast_int(pick_ast_comp(decl,"offset"))));                        
+                        append_ast(x,mk_int(ast_int(pick_ast_comp(decl,"offset"))));
                     }
-                    
+
                     break;
                 case ArrayDeref:
                     t0 = GO_PICK_COMP("lvalue");
                     t1 = GO_PICK_COMP("expression");
-                    
+
                     if ( t1 == no_type )
                         ;
                     else if (t1 != basic_int)
@@ -671,8 +670,7 @@ ast* check(ast* x) {
                     break;
                 case RecordDeref:
                     break;
-                
-                /* binary/unary operator wouldn't be used here */                
+                /* binary/unary operator wouldn't be used here */
                 case Gt:
                 case Lt:
                 case Eq:
@@ -690,9 +688,8 @@ ast* check(ast* x) {
                 case UPlus:
                 case UMinus:
                 case Not:
-                    assert(0);            
+                    assert(0);
                     break;
-                
                 case TypeInferNeeded:
                     result = need_infer;
                     break;
