@@ -19,7 +19,7 @@ ast *basic_int, *basic_real, *basic_bool, *basic_str;
 ast *no_type, *need_infer, *void_type;
 
 // global var: any error in type checking
-int has_error;
+int error_count;
 
 void print_repr(ast* x){  
 #define GO_PICK(k)          print_repr( pick_ast(x,k) )
@@ -112,7 +112,7 @@ void print_repr(ast* x){
 }
 
 void error(ast* x, const char* s){
-    has_error = 1;
+    error_count++;
     //printf("ERROR: at line %d near \"",x->line_no);    
     printf("ERROR: at line %d near \"",x->first_line);
     print_repr( x );    
@@ -166,10 +166,10 @@ int scope_offset_top;
 int param_offset;
 #define TAKE_PARAM_OFFSET (param_offset+=4,param_offset)
 
-ast* _check_type(ast* x) {
-#define GO_PICK(k)          _check_type( pick_ast(x,k) )
-#define GO_PICK_COMP(k)     _check_type( pick_ast_comp(x,k) )
-#define GO(e)               _check_type( e )
+ast* check(ast* x) {
+#define GO_PICK(k)          check( pick_ast(x,k) )
+#define GO_PICK_COMP(k)     check( pick_ast_comp(x,k) )
+#define GO(e)               check( e )
 #define FOREACH(x)          for(l=args(x);l;l=l->next)
 #define ELEM(l)             l->elem
 #define ELEML               ELEM(l)
@@ -667,7 +667,7 @@ ast* _check_type(ast* x) {
                     else if (t0->info.node.tag != ArrayType)
                         error(x,"Array dereference can only be apply to ARRAY type");
                     else
-                        result = _check_type( pick_ast_list(t0->info.node.arguments,0) );
+                        result = check( pick_ast_list(t0->info.node.arguments,0) );
                     break;
                 case RecordDeref:
                     break;
@@ -711,10 +711,10 @@ ast* _check_type(ast* x) {
     return result;
 }
 
-
-/* check the type of ast. return 1 if ok, 0 if no-passed*/
-
-int type_check(ast* x) {
+/**
+ * Initialize basic types/
+ */
+void type_check_init() {
     // Basic types
     basic_int  = mk_node(NamedType, cons(mk_var("basic_int"),  NULL));
     basic_real = mk_node(NamedType, cons(mk_var("basic_real"), NULL));
@@ -724,17 +724,22 @@ int type_check(ast* x) {
     need_infer = mk_node(NamedType, cons(mk_var("need_infer"), NULL));
     void_type  = mk_node(NamedType, cons(mk_var("void_type"),  NULL));
 
-    // Check
-    has_error = 0;
+    // Variables
+    error_count = 0;
     scope_init();    
-    scope_offset_top = 0;
+    scope_offset_top = 0; // @todo
+}
 
+/**
+ * Interface for outside call
+ */
+int type_check(ast* x) {
     printf("====================Type Checking==================\n");
-    _check_type(x);    
-    if (has_error)
-        printf("Type Checking *ERROR*\n");
+    type_check_init();
+    check(x);
+    if (error_count)
+        printf("Type Checking ERROR\n");
     else
-        printf("Type Checking *SUCCESSFULLY*\n");
-
-    return has_error;
+        printf("Type Checking SUCCESSFULLY\n");
+    return error_count;
 }
