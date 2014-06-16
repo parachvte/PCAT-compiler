@@ -128,7 +128,7 @@ ast* pick_ast(ast* a, int k) {
     return pick_ast_list(args(a), k);
 }
 
-ast* pick_ast_comp(ast* a, char* name) {
+ast* pick_ast_by_name(ast* a, char* name) {
     return pick_ast(a, get_comp_id(a, name));
 }
 

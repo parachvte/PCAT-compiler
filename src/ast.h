@@ -151,7 +151,7 @@ int ast_real_repr(ast *a);
 
 ast* pick_ast_list(ast_list* a, int k);
 ast* pick_ast(ast* a, int k);
-ast* pick_ast_comp(ast* a, char* name);
+ast* pick_ast_by_name(ast* a, char* name);
 void append_ast(ast* a, ast* b);
 int get_comp_id(ast* a, char* name);
 
