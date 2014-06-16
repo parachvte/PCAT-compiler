@@ -146,7 +146,7 @@ int tag(ast* a); // Use function instead of MACRO, this can ensure
 #define ast_str(a)      (a->info.string)
 #define ELEM(a)         (a->elem)
 #define ELEML           (ELEM(l))
-#define FOREACH(x)      for(l=args(x);l;l=l->next)
+#define FOREACH(x)      for (l = args(x); l; l = l->next)
 
 ast_list* args(ast* a);
 int ast_real_repr(ast *a);

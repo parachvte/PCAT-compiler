@@ -156,7 +156,6 @@ notes:
     for expr, return type
     for param, return type
     for var, return its decleration
-    
 */
 
 #define MAX_SCOPE_SIZE 998
@@ -183,10 +182,9 @@ int _take_param_offset() {
 }
 #define TAKE_PARAM_OFFSET   _take_param_offset() 
 
-/** Check */
+/** Check Procedure */
 ast* check(ast* x) {
     //back_trace(x);
-    
     ast* result = no_type;
     ast* decl;
     if (x == NULL) {
@@ -208,38 +206,37 @@ ast* check(ast* x) {
             result = basic_str;
             break;
         case node_ast : {
-            ast_list* l;           // loop variable
-            char* id;              // identifier
-            ast *t0, *t1, *t2, *t3;   // temp
+            ast_list* l;            // loop variable
+            char* id;               // identifier
+            ast *t0, *t1, *t2, *t3; // temp
             int level;
             ast *nx;
-            ast *ap,*fp;
-            ast_list * lap,*lfp;
+            ast *ap, *fp;           // actual parameters, formal paramaters
+            ast_list *lap, *lfp;    // list for ap, fp
             ast_list *ail;
             ast *array_elem_type;
-            switch (x->info.node.tag){
+            switch (tag(x)) {
                 case Program:
                     begin_scope();
                     SCOPE_PUSH;
                     CURR_RETURN_TYPE = void_type;
                     CHECK_BY_NAME("body");
-                    append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
+                    append_ast(x, mk_int(TAKE_LOCAL_OFFSET));
                     SCOPE_POP; 
                     end_scope();
                     break;
                 case Body:
                     CHECK_BY_NAME("declarations-list");
                     CHECK_BY_NAME("statements-list");
-                    result=no_type; 
                     break;
                 case DeclarationBlock:
                     // order:
-                    // 1. type  () TODO: check forwrading...
+                    // 1. type  () todo: check forwarding
                     // 2. var   (forwarding type)
                     // 3. proc  (forwarding type/var)
-                    FOREACH(x) if (tag(ELEML)==TypeDecs) CHECK(ELEML);
-                    FOREACH(x) if (tag(ELEML)==VariableDeclarationLine) CHECK(ELEML);
-                    FOREACH(x) if (tag(ELEML)==ProcDecs) CHECK(ELEML);
+                    FOREACH(x) if (tag(ELEML) == TypeDecs) CHECK(ELEML);
+                    FOREACH(x) if (tag(ELEML) == VariableDeclarationLine) CHECK(ELEML);
+                    FOREACH(x) if (tag(ELEML) == ProcDecs) CHECK(ELEML);
                     break;
                 case VariableDeclarationLine:
                     FOREACH(x) CHECK(ELEML);
@@ -252,81 +249,73 @@ ast* check(ast* x) {
                     break;
                 case VariableDeclaration:
                     // append level/offset
-                    append_ast(x,mk_int(CUR_LEVEL));
-                    append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
+                    append_ast(x, mk_int(CUR_LEVEL));
+                    append_ast(x, mk_int(TAKE_LOCAL_OFFSET));
 
                     // real works
-                    id = ast_var(pick_ast_by_name(x,"ID"));
+                    id = ast_var(pick_ast_by_name(x, "ID"));
                     t1 = CHECK_BY_NAME("type");
                     t2 = CHECK_BY_NAME("expression");
-                    if (t1==need_infer)
-                        if (t2==no_type)
-                            error(x,"Cannot infer the type");
+                    if (t1 == need_infer) {
+                        if (t2 == no_type)
+                            error(x, "Cannot infer type");
                         else
-                        // set t1
-                            x->info.node.arguments->next->elem = t2;
-                    else
-                        if (t2==no_type)
-                            ;
-                        else
-                            if ( t1 != t2 )
-                                error(x,"Type conflict");
-                    decl = lookup(id,&level);
-                    if ( decl && !(level<CUR_LEVEL) ){
-                        error(x,"Name conflict");
-                    }else
-                        insert( id, x );
-
+                            x->info.node.arguments->next->elem = t2; // infer
+                    } else {
+                        if (t2 != no_type && t1 != t2) error(x, "Type conflict");
+                    }
+                    decl = lookup(id, &level);
+                    if (decl && !(level<CUR_LEVEL)) {
+                        error(x, "Name conflict");
+                    } else {
+                        insert(id, x);
+                    }
                     break;
                 case TypeDec:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-
-                    decl = lookup(id,&level);
-                    if ( !decl ){
-                        insert(id,CHECK_BY_NAME("type"));
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    decl = lookup(id, &level);
+                    if (!decl) {
+                        insert(id, CHECK_BY_NAME("type"));
                     }else
-                        error(x,"Name conflict");
+                        error(x, "Name conflict");
                     break;
                 case ProcDec:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-                    decl = lookup(id,&level);
-                    if ( !decl ){
-                        insert(id,x);
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    decl = lookup(id, &level);
+                    if (!decl) {
+                        insert(id, x);
                     }else
-                        error(x,"Name conflict");
+                        error(x, "Name conflict");
 
                     t2 = CHECK_BY_NAME("type");  //check return type
                     begin_scope();
                     SCOPE_PUSH;
                     CURR_RETURN_TYPE = t2;
-                    // append level
-                    append_ast(x,mk_int(CUR_LEVEL));
-                    CHECK_BY_NAME("formal-param-list");  //check formal list, adding to scope
-                    CHECK_BY_NAME("body");  //check procedure body
-                    append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
+                    append_ast(x, mk_int(CUR_LEVEL));
+                    CHECK_BY_NAME("formal-param-list");
+                    CHECK_BY_NAME("body");
+                    append_ast(x, mk_int(TAKE_LOCAL_OFFSET));
                     SCOPE_POP;
                     end_scope();
                     break;
                 case NamedType:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-                    if ( !strcmp(id,"INT") || !strcmp(id,"INTEGER") || !strcmp(id,"basic_int") )
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    if (!strcmp(id,"INT") || !strcmp(id, "INTEGER") || !strcmp(id, "basic_int"))
                         result = basic_int;
-                    else if ( !strcmp(id,"REAL") || !strcmp(id,"basic_real") )
+                    else if (!strcmp(id, "REAL") || !strcmp(id, "basic_real"))
                         result = basic_real;
-                    else if ( !strcmp(id,"BOOLEAN") || !strcmp(id,"basic_bool") )
+                    else if (!strcmp(id, "BOOLEAN") || !strcmp(id, "basic_bool") )
                         result = basic_bool;
-                    else{
-                        nx = lookup( id, NULL );
+                    else {
+                        nx = lookup(id, NULL);
                         if (!nx)
-                            error(nx,"Type Name not found");
+                            error(nx, "Type Name not found");
                         result = nx;
                     }
                     break;
                 case ArrayType:
                     t0 = CHECK_BY_NAME("type"); // check inner element's type
-                    if ( t0 == no_type )
-                        ;
-                    else
+                    if (t0 != no_type)
                         result = x;
                     break;
                 case RecordType:
@@ -342,92 +331,88 @@ ast* check(ast* x) {
                     // Not Implemented!
                     break;
                 case FormalParamList:
-                    param_offset = 8;       // first(8) reserved for static links
-                    FOREACH(x) CHECK(ELEML);   // check each param
+                    param_offset = 8; // first(8) reserved for static links
+                    FOREACH(x) CHECK(ELEML); // check each param
                     break;
                 case Param:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-                    decl = lookup(id,&level);
-                    if ( decl && !(level < CUR_LEVEL ) ){
-                        error(x,"Name conflict is not allowed");
-                        printf("%d %d\n",level,CUR_LEVEL);
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    decl = lookup(id, &level);
+                    if (decl && !(level < CUR_LEVEL)) {
+                        error(x, "Name conflict is not allowed");
+                        printf("%d %d\n", level, CUR_LEVEL);
                     }else{
                         t1 = CHECK_K(1);
-                        insert(id,x);
+                        insert(id, x);
                         result = t1;
                     }
-                    append_ast(x,mk_int(CUR_LEVEL));
-                    append_ast(x,mk_int(TAKE_PARAM_OFFSET));
+                    append_ast(x, mk_int(CUR_LEVEL));
+                    append_ast(x, mk_int(TAKE_PARAM_OFFSET));
                     break;
                 case AssignStatement:
                     t0 = CHECK_BY_NAME("lvalue");
                     t1 = CHECK_BY_NAME("expression");
-                    if ( t0==no_type || t1 == no_type )
+                    if (t0 == no_type || t1 == no_type)
                         ;
-                    else if ( t0 != t1 )
-                        error(x,"Assgining between diffrent types is not allowed");   
+                    else if (t0 != t1)
+                        error(x, "Assgining between diffrent types is not allowed");   
                     break;
                 case CallStatement:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-                    decl = lookup(id,&level);
-                    if ( !decl )
-                        error(x,"Cannot find the called procedure");
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    decl = lookup(id, &level);
+                    if (!decl)
+                        error(x, "Cannot find the called procedure");
                     else{
-                        //ap -> actual parameters
-                        //fp -> formal paramaters
                         ap = pick_ast_by_name(x,"expression-list");
                         fp = pick_ast_by_name(decl,"formal-param-list");
-                        // lap -> list of ap
-                        // lfp -> list of fp
                         lap = args(ap);
                         lfp = args(fp);
-                        for(;lap && lfp; lap=lap->next, lfp=lfp->next ){
+                        for( ; lap && lfp; lap = lap->next, lfp = lfp->next) {
                             t0 = CHECK(ELEM(lap));
-                            t1 = CHECK(pick_ast_by_name(ELEM(lfp),"type"));
-                            if ( t0 != t1 )
-                                error(x,"Formal and actual parameters don't match");
+                            t1 = CHECK(pick_ast_by_name(ELEM(lfp), "type"));
+                            if (t0 != t1)
+                                error(x, "Formal and actual parameters don't match");
                         }
-                        if ( lap && !lfp )
-                            error(x,"Too many actual parameters");
-                        if ( !lap && lfp )
-                            error(x,"Need more actual parameters");
+                        if (lap && !lfp)
+                            error(x, "Too many actual parameters");
+                        if (!lap && lfp)
+                            error(x, "Need more actual parameters");
                     }
 
-                    append_ast(x,result);
-                    append_ast(x,mk_int(CUR_LEVEL-pick_ast_by_name(decl,"level")->info.integer));
+                    append_ast(x, result);
+                    append_ast(x, mk_int(CUR_LEVEL - ast_int(pick_ast_by_name(decl, "level"))));
                     break;
                 case ReadStatement:
-                    FOREACH(pick_ast_by_name(x,"lvalue-list")){
+                    FOREACH(pick_ast_by_name(x, "lvalue-list")) {
                         t0 = CHECK(ELEML);
 
-                        if ( t0 != basic_int && 
-                             t0 != basic_real &&
-                             t0 != basic_str )
-                            error(x,"In READ statement only basic types (INT/REAL) are allowed");
+                        if (t0 != basic_int && 
+                            t0 != basic_real &&
+                            t0 != basic_str)
+                            error(x, "In READ statement only basic types (INT/REAL) are allowed");
                     }
                     break;
                 case WriteStatement:
-                    FOREACH(pick_ast_by_name(x,"expression-list")){
+                    FOREACH(pick_ast_by_name(x, "expression-list")) {
                         t0 = CHECK(ELEML);
-                        if ( t0 != basic_int && 
-                             t0 != basic_real &&
-                             t0 != basic_str &&
-                             t0 != basic_bool ){
-                            error(x,"In WRITE statement only basic types (INT/REAL), STRING and BOOL are allowed");
+                        if (t0 != basic_int && 
+                            t0 != basic_real &&
+                            t0 != basic_str &&
+                            t0 != basic_bool ) {
+                            error(x, "In WRITE statement only basic types (INT/REAL), STRING and BOOL are allowed");
                         }
                     }
                     break;
                 case IfStatement:
                     t0 = CHECK_BY_NAME("expression");
-                    if ( t0 != basic_bool )
-                        error(x,"Condition in IF must be of BOOLEAN type");
+                    if (t0 != basic_bool)
+                        error(x, "Condition in IF must be of BOOLEAN type");
                     CHECK_BY_NAME("statement");
                     CHECK_BY_NAME("statement-else");
                     break;
                 case WhileStatement:
                     t0 = CHECK_BY_NAME("expression");
-                    if ( t0 != basic_bool )
-                        error(x,"Condition in WHILE must be of BOOLEAN type");
+                    if (t0 != basic_bool)
+                        error(x, "Condition in WHILE must be of BOOLEAN type");
                     CHECK_BY_NAME("statement");
                     break;
                 case LoopStatement:
@@ -435,32 +420,31 @@ ast* check(ast* x) {
                     break;
                 case ForStatement:
                     // For I = a to b by c do e
-                    id = ast_var(pick_ast_by_name(x,"ID"));
+                    id = ast_var(pick_ast_by_name(x, "ID"));
                     t1 = CHECK_BY_NAME("expression-from");
                     t2 = CHECK_BY_NAME("expression-to");
                     t3 = CHECK_BY_NAME("expression-by");
 
-                    decl = lookup(id,&level);
-                    if ( !decl )
-                        error(x,"Unknow index variable in FOR");
+                    decl = lookup(id, &level);
+                    if (!decl)
+                        error(x, "Unknow index variable in FOR");
                     else if (t1 != basic_int)
-                        error(x,"Start of range in FOR must be of INT type");
+                        error(x, "Start of range in FOR must be of INT type");
                     else if (t2 != basic_int)
-                        error(x,"End of range in FOR must be of INT type");
+                        error(x, "End of range in FOR must be of INT type");
                     else if (t3 != basic_int)
-                        error(x,"Step of range in FOR must be of INT type");
-
+                        error(x, "Step of range in FOR must be of INT type");
                     CHECK_BY_NAME("statement");
 
-                    append_ast(x,pick_ast_by_name(decl,"offset"));
+                    append_ast(x, pick_ast_by_name(decl, "offset"));
                     break;
                 case ExitStatement:
                     break;
                 case ReturnStatement:
                     t1 = CHECK_BY_NAME("expression");
                     t2 = CURR_RETURN_TYPE;
-                    if ( t1 != t2 )
-                        error(x,"This type (maybe EMPTY-TYPE) conflicts with PROCEDURE declaration");
+                    if (t1 != t2)
+                        error(x, "This type (maybe EMPTY-TYPE) conflicts with PROCEDURE declaration");
                     break;
                 case StatementBlock:                    
                     FOREACH(x) CHECK(ELEML); 
@@ -470,168 +454,170 @@ ast* check(ast* x) {
                     break;
                 /*
                     For expression, return no-type if something wrong or some 
-                        component is of no-type, which means I couldn't
-                        handle the type of this expression.
+                    component is of no-type, which means I couldn't
+                    handle the type of this expression.
                 */
                 case BinOpExp:
                     t1 = CHECK_BY_NAME("expression-left");
                     t2 = CHECK_BY_NAME("expression-right");
 
-                    if ( t1==no_type || t2 == no_type )
+                    if (t1==no_type || t2 == no_type)
                         ;
-                    else if ( ( t1!=basic_int && t1!=basic_real && t1!=basic_bool ) ||
-                              ( t2!=basic_int && t2!=basic_real && t2!=basic_bool ) )
-                        error(x,"Non-basic type couldn't be used for binary operation");
-                    else{
-                        switch( tag(pick_ast_by_name(x,"binop")) ){
-                            case Plus: case Minus: case Times:
-                                if ( ( t1==basic_int || t1==basic_real ) &&
-                                     ( t2==basic_int || t2==basic_real ) ){
-                                    if ( t1==basic_int && t2==basic_int )
+                    else if ((t1 != basic_int && t1 != basic_real && t1 != basic_bool) ||
+                             (t2 != basic_int && t2 != basic_real && t2 != basic_bool))
+                        error(x, "Non-basic type couldn't be used for binary operation");
+                    else {
+                        switch (tag(pick_ast_by_name(x, "binop"))) {
+                            case Plus:
+                            case Minus:
+                            case Times:
+                                if ((t1 == basic_int || t1 == basic_real) &&
+                                    (t2 == basic_int || t2 == basic_real)) {
+                                    if (t1 == basic_int && t2 == basic_int)
                                         result = basic_int;
                                     else
                                         result = basic_real;
-                                }else
-                                    error(x,"Binary arithmic operation expects INTEGER or REAL type on both sides");
+                                } else
+                                    error(x, "Binary arithmic operation expects INTEGER or REAL type on both sides");
                                 break;
                             case Divide:
                             case Module:
-                                if ( t1==basic_int && t2==basic_int )
+                                if (t1 == basic_int && t2 == basic_int)
                                     result = basic_int;
                                 else
-                                    error(x,"Binary arithmic operation expects INTEGER type on both sides");
+                                    error(x, "Binary arithmic operation expects INTEGER type on both sides");
                                 break;
                             case Slash:
-                                if ( ( t1==basic_int || t1==basic_real ) &&
-                                     ( t2==basic_int || t2==basic_real ) )
+                                if ((t1 == basic_int || t1 == basic_real) &&
+                                    (t2 == basic_int || t2 == basic_real) )
                                     result = basic_real;
                                 else
-                                    error(x,"Binary arithmic operation expects INTEGER or type on both sides");
+                                    error(x, "Binary arithmic operation expects INTEGER or type on both sides");
                                 break;
-                            case Gt: case Lt: case Eq: case Ge: case Le: case Ne:
-                                if ( ( t1==basic_int || t1==basic_real ) &&
-                                     ( t2==basic_int || t2==basic_real ) )
+                            case Gt:
+                            case Lt:
+                            case Eq:
+                            case Ge:
+                            case Le:
+                            case Ne:
+                                if ((t1 == basic_int || t1 == basic_real) &&
+                                    (t2 == basic_int || t2 == basic_real))
                                     result = basic_bool;
                                 else
-                                    error(x,"Binary Comparation operation expects INTEGER or REAL type on both sides");
+                                    error(x, "Binary Comparation operation expects INTEGER or REAL type on both sides");
                                 break;
-                            case And: case Or:
-                                if ( t1==basic_bool && t2==basic_bool )
+                            case And:
+                            case Or:
+                                if (t1 == basic_bool && t2 == basic_bool)
                                     result = basic_bool;
                                 else
-                                    error(x,"Binary boolean operation expects BOOLEAN type on both sides");
+                                    error(x, "Binary boolean operation expects BOOLEAN type on both sides");
                                 break;
                             default:
                                 break;
                         }
                     }
                     
-                    append_ast(x,result);
-                    append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
+                    append_ast(x, result);
+                    append_ast(x, mk_int(TAKE_LOCAL_OFFSET));
                     break;
                 case UnOpExp:
                     t1 = CHECK_BY_NAME("expression");                   
-                    if ( t1==no_type )
+                    if (t1 == no_type)
                         ; 
-                    else if ( t1!=basic_int && t1!=basic_real && t1!=basic_bool )
-                        error(x,"Non-basic type couldn't be used for unary operation");
+                    else if (t1 != basic_int && t1 != basic_real && t1 != basic_bool)
+                        error(x, "Non-basic type couldn't be used for unary operation");
                     else{
-                        switch( tag(pick_ast_by_name(x,"unop")) ){
-                            case UPlus: case UMinus:
-                                if ( t1==basic_int || t1==basic_real ){
-                                    if ( t1==basic_int )
+                        switch (tag(pick_ast_by_name(x,"unop"))) {
+                            case UPlus:
+                            case UMinus:
+                                if (t1 == basic_int || t1 == basic_real) {
+                                    if (t1 == basic_int)
                                         result = basic_int;
                                     else
                                         result = basic_real;
-                                }else
-                                    error(x,"Unary arithmic operation expects INTEGER or REAL type");                      
+                                } else
+                                    error(x, "Unary arithmic operation expects INTEGER or REAL type");                      
                                 break;
                             case Not:
-                                if ( t1==basic_bool )
+                                if (t1 == basic_bool)
                                     result = basic_bool;
                                 else
-                                    error(x,"Unary boolean operation expects BOOLEAN type");
+                                    error(x, "Unary boolean operation expects BOOLEAN type");
                                 break;
                             default:
                                 break;
                         }
                     }
 
-                    append_ast(x,result);
-                    append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
+                    append_ast(x, result);
+                    append_ast(x, mk_int(TAKE_LOCAL_OFFSET));
                     break;
                 case LvalExp:
                     result = CHECK_BY_NAME("lvalue");
-                    append_ast(x,result);
-                    append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
+                    append_ast(x, result);
+                    append_ast(x, mk_int(TAKE_LOCAL_OFFSET));
                     break;
                 case CallExp:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-                    decl = lookup(id,&level);
-                    if ( !decl )
-                        error(x,"Cannot find the called procedure");
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    decl = lookup(id, &level);
+                    if (!decl)
+                        error(x, "Cannot find the called procedure");
                     else{
-                        //ap -> actual parameters
-                        //fp -> formal paramaters
-                        ap = pick_ast_by_name(x,"expression-list");
-                        fp = pick_ast_by_name(decl,"formal-param-list");
-                        // lap -> list of ap
-                        // lfp -> list of fp
+                        ap = pick_ast_by_name(x, "expression-list");
+                        fp = pick_ast_by_name(decl, "formal-param-list");
                         lap = args(ap);
                         lfp = args(fp);
-                        for(;lap && lfp; lap=lap->next, lfp=lfp->next ){
+                        for( ; lap && lfp; lap = lap->next, lfp = lfp->next ){
                             t0 = CHECK(ELEM(lap));
-                            t1 = CHECK(pick_ast_by_name(ELEM(lfp),"type"));
-                            if ( t0 != t1 )
-                                error(x,"Formal and actual parameters don't match");
+                            t1 = CHECK(pick_ast_by_name(ELEM(lfp), "type"));
+                            if (t0 != t1)
+                                error(x, "Formal and actual parameters don't match");
                         }
-                        if ( lap && !lfp )
-                            error(x,"Too many actual parameters");
-                        if ( !lap && lfp )
-                            error(x,"Need more actual parameters");
+                        if (lap && !lfp)
+                            error(x, "Too many actual parameters");
+                        if (!lap && lfp)
+                            error(x, "Need more actual parameters");
                         // type of procedure
-                        result = CHECK( pick_ast_by_name(decl,"type") );
+                        result = CHECK(pick_ast_by_name(decl, "type"));
                     }
-
-                    append_ast(x,result);
-                    append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_by_name(decl,"level"))));
-                    append_ast(x,mk_int(TAKE_LOCAL_OFFSET));
+                    append_ast(x, result);
+                    append_ast(x, mk_int(CUR_LEVEL - ast_int(pick_ast_by_name(decl, "level"))));
+                    append_ast(x, mk_int(TAKE_LOCAL_OFFSET));
                     break;
                 case RecordExp:
-                    error(x,"RecordExp checking not implement");
+                    error(x, "RecordExp checking not implement");
                     break;
                 case ArrayExp:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-                    decl = lookup(id,&level);
-                    if ( !decl )
-                        error(x,"Cannot find the ARRAY constructor's type");
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    decl = lookup(id, &level);
+                    if (!decl)
+                        error(x, "Cannot find the ARRAY constructor's type");
 
-
-                    array_elem_type = CHECK( pick_ast_by_name(decl,"type") );
-
-                    ail = args(pick_ast_by_name(x,"array-init-list"));
-                    for(;ail;ail=ail->next){
-                        t0 = CHECK( pick_ast_by_name(ELEM(ail),"expression-count") );
-                        t1 = CHECK( pick_ast_by_name(ELEM(ail),"expression-instance") );
-                        if ( t0 != basic_int )
-                            error(x,"Counter in ARRAY constructor must be of INT type");
-                        if ( t1 != array_elem_type )
-                            error(x,"Type in constructor and type in ARRAY definition don't match");
+                    array_elem_type = CHECK(pick_ast_by_name(decl, "type"));
+                    ail = args(pick_ast_by_name(x, "array-init-list"));
+                    for( ; ail; ail = ail->next) {
+                        t0 = CHECK(pick_ast_by_name(ELEM(ail), "expression-count") );
+                        t1 = CHECK(pick_ast_by_name(ELEM(ail), "expression-instance") );
+                        if (t0 != basic_int)
+                            error(x, "Counter in ARRAY constructor must be of INT type");
+                        if (t1 != array_elem_type)
+                            error(x, "Type in constructor and type in ARRAY definition don't match");
                     }
 
                     result = decl;
                     break;
                 case IntConst:
                     result = basic_int;
-                    append_ast(x,result);
+                    append_ast(x, result);
                     break;
                 case RealConst:
                     result = basic_real;
-                    append_ast(x,result);
+                    append_ast(x, result);
                     break;
                 case StringConst:
                     result = basic_str;
-                    append_ast(x,result);
+                    append_ast(x, result);
                     break;
                 case RecordInitList:
                     break;
@@ -645,37 +631,35 @@ ast* check(ast* x) {
                     result = CHECK_K(0); // todo: right?
                     break;
                 case Var:
-                    id = ast_var(pick_ast_by_name(x,"ID"));
-                    if ( !strcmp(id,"TRUE") || !strcmp(id,"FALSE") ){
+                    id = ast_var(pick_ast_by_name(x, "ID"));
+                    if (!strcmp(id, "TRUE") || !strcmp(id,"FALSE")) {
                         result = basic_bool;
-                        append_ast(x,result);
-                    }else{
-                        decl = lookup(id,&level);
-                        if ( !decl )
+                        append_ast(x, result);
+                    } else {
+                        decl = lookup(id, &level);
+                        if (!decl)
                             error(x,"Unknow variable name");
-                        else{
-                            result = CHECK( pick_ast_by_name(decl,"type") );
-                        }
-                        append_ast(x,result);
-                        append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_by_name(decl,"level"))));
-                        append_ast(x,mk_int(ast_int(pick_ast_by_name(decl,"offset"))));
+                        else
+                            result = CHECK(pick_ast_by_name(decl, "type"));
+                        append_ast(x, result);
+                        append_ast(x, mk_int(CUR_LEVEL - ast_int(pick_ast_by_name(decl, "level"))));
+                        append_ast(x, mk_int(ast_int(pick_ast_by_name(decl, "offset"))));
                     }
-
                     break;
                 case ArrayDeref:
                     t0 = CHECK_BY_NAME("lvalue");
                     t1 = CHECK_BY_NAME("expression");
 
-                    if ( t1 == no_type )
+                    if (t1 == no_type)
                         ;
                     else if (t1 != basic_int)
-                        error(x,"Array index can only be of INT type");
+                        error(x, "Array index can only be of INT type");
                     else if (t0 == no_type)
                         ;
-                    else if (t0->info.node.tag != ArrayType)
-                        error(x,"Array dereference can only be apply to ARRAY type");
+                    else if (tag(t0) != ArrayType)
+                        error(x, "Array dereference can only be apply to ARRAY type");
                     else
-                        result = check( pick_ast_list(t0->info.node.arguments,0) );
+                        result = check(pick_ast_list(args(t0), 0));
                     break;
                 case RecordDeref:
                     break;
