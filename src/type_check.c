@@ -22,13 +22,12 @@ ast *no_type, *need_infer, *void_type;
 
 int error_count;
 
+#define PRINT_REPR(k)           print_repr(pick_ast(x, k))
+#define P                       printf 
 /***************************************************************
                     Print Representation
 ***************************************************************/
 void print_repr(ast* x){
-#define GO_PICK(k)          print_repr( pick_ast(x,k) )
-#define GO_PICK_COMP(k)     print_repr( pick_ast_by_name(x,k) )
-#define p                   printf 
     switch (x->tag){
         case int_ast:   break;
         case real_ast:  break;
@@ -36,70 +35,70 @@ void print_repr(ast* x){
         case str_ast:   break;
         case node_ast: {
                 switch (x->info.node.tag){
-                    case Program:                       p("PROGRAM IS\n");break;
-                    case Body: p("BEGIN\n");            break;
+                    case Program:                       P("PROGRAM IS\n");break;
+                    case Body: P("BEGIN\n");            break;
                     case DeclarationBlock:              break;
                     case VariableDeclarationLine:       break;
                     case TypeDecs:                      break;
                     case ProcDecs:                      break;
-                    case VariableDeclaration:p("VAR");  break;
-                    case TypeDec:p("TYPE");             break;
-                    case ProcDec: p("PROCEDURE");       break;
-                    case NamedType: GO_PICK(0);         break;
-                    case ArrayType: p("ARRAY OF");      break;
-                    case RecordType:p("RECORD");        break;
-                    //case NoType:p("[No Type]");         break;
+                    case VariableDeclaration:P("VAR");  break;
+                    case TypeDec:P("TYPE");             break;
+                    case ProcDec: P("PROCEDURE");       break;
+                    case NamedType: PRINT_REPR(0);      break;
+                    case ArrayType: P("ARRAY OF");      break;
+                    case RecordType:P("RECORD");        break;
+                    //case NoType:P("[No Type]");         break;
                     case CompList:                      break;
-                    case Comp:p(" : ");                 break;
+                    case Comp:P(" : ");                 break;
                     case FormalParamList:               break;
-                    case Param:p(" : ");                break;
-                    case AssignStatement:p(" := ");     break;
-                    case CallStatement:p("(");          break;
-                    case ReadStatement:p("READ");       break;
-                    case WriteStatement:p("WRITE");     break;
-                    case IfStatement:p("IF");           break;
-                    case WhileStatement:p("WHILE");     break;    
-                    case LoopStatement:p("LOOP");       break;
-                    case ForStatement:p("FOR");         break;
-                    case ExitStatement:p("EXIT");       break;
-                    case ReturnStatement:p("RETURN");   break;
+                    case Param:P(" : ");                break;
+                    case AssignStatement:P(" := ");     break;
+                    case CallStatement:P("(");          break;
+                    case ReadStatement:P("READ");       break;
+                    case WriteStatement:P("WRITE");     break;
+                    case IfStatement:P("IF");           break;
+                    case WhileStatement:P("WHILE");     break;    
+                    case LoopStatement:P("LOOP");       break;
+                    case ForStatement:P("FOR");         break;
+                    case ExitStatement:P("EXIT");       break;
+                    case ReturnStatement:P("RETURN");   break;
                     case StatementBlock:                break;
                     case ExprList:                      break;
-                    case BinOpExp:GO_PICK(0);           break;
-                    case UnOpExp:GO_PICK(0);            break;
+                    case BinOpExp:PRINT_REPR(0);           break;
+                    case UnOpExp:PRINT_REPR(0);            break;
                     case LvalExp:                       break;
-                    case CallExp:GO_PICK(0);            break;
+                    case CallExp:PRINT_REPR(0);            break;
                     case RecordExp:                     break;
-                    case ArrayExp:GO_PICK(0);           break;
-                    case IntConst:GO_PICK(0);           break;
-                    case RealConst:GO_PICK(0);          break;
-                    case StringConst: GO_PICK(0);       break;
+                    case ArrayExp:PRINT_REPR(0);           break;
+                    case IntConst:PRINT_REPR(0);           break;
+                    case RealConst:PRINT_REPR(0);          break;
+                    case StringConst: PRINT_REPR(0);       break;
                     case RecordInitList:                break;
                     case RecordInit:                    break;
                     case ArrayInitList:                 break;
-                    case ArrayInit:p("OF");             break;
+                    case ArrayInit:P("OF");             break;
                     case LvalList:                      break;
-                    case Var:GO_PICK(0);                break;
+                    case Var:PRINT_REPR(0);                break;
                     case ArrayDeref:                    break;
                     case RecordDeref:                   break;
                         
-                    case Gt:p(">");         break;
-                    case Lt:p("<");         break;
-                    case Eq:p("=");         break;
-                    case Ge:p(">=");        break;
-                    case Le:p("<=");        break;
-                    case Ne:p("<>");        break;
-                    case Plus:p("+");       break;
-                    case Minus:p("-");      break;
-                    case Times:p("*");      break;
-                    case Slash:p("/");      break;
-                    case Divide:p(" div ");    break;
-                    case Module:p(" mod ");    break;
-                    case And:p(" and ");    break;
-                    case Or:p(" or ");      break;
-                    case UPlus:p("+");      break;
-                    case UMinus:p("-");     break;
-                    case Not:p(" not ");    break;
+                    case Gt:P(">");         break;
+                    case Lt:P("<");         break;
+                    case Eq:P("=");         break;
+                    case Ge:P(">=");        break;
+                    case Le:P("<=");        break;
+                    case Ne:P("<>");        break;
+                    case Plus:P("+");       break;
+                    case Minus:P("-");      break;
+                    case Times:P("*");      break;
+                    case Slash:P("/");      break;
+                    case Divide:P(" div ");    break;
+                    case Module:P(" mod ");    break;
+                    case And:P(" and ");    break;
+                    case Or:P(" or ");      break;
+                    case UPlus:P("+");      break;
+                    case UMinus:P("-");     break;
+                    case Not:P(" not ");    break;
                     
                     case TypeInferNeeded:           break;
                     case VoidType:                      break;
@@ -110,8 +109,8 @@ void print_repr(ast* x){
         };
         break;
     }
-#undef GO_PICK
-#undef GO_PICK_COMP
+#undef PRINT_REPR 
+#undef PRINT_REPR_NAME 
 #undef p
 }
 
