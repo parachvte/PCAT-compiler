@@ -267,9 +267,6 @@ void _gen_code( ast* x ){
 #define GO_PICK(k)          _gen_code( pick_ast(x,k) )
 #define GO_PICK_COMP(k)     _gen_code( pick_ast_by_name(x,k) )
 #define GO(e)               _gen_code( e )
-#define FOREACH(x)          for(l=args(x);l;l=l->next)
-#define ELEM(l)             l->elem
-#define ELEML               ELEM(l)
 
     if ( x == NULL )
         ;

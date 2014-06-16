@@ -22,9 +22,11 @@ ast *no_type, *need_infer, *void_type;
 
 int error_count;
 
-#define P                       printf 
-
 #define PRINT_REPR(k)           print_repr(pick_ast(x, k))
+
+#define CHECK_K(k)            check(pick_ast(x, k))
+#define CHECK_BY_NAME(k)    check(pick_ast_by_name(x, k))
+#define CHECK(e)               check(e)
 
 /***************************************************************
                     Print Representation
@@ -169,12 +171,6 @@ int scope_offset_top;
 int param_offset;
 #define TAKE_PARAM_OFFSET (param_offset+=4,param_offset)
 
-#define CHECK_K(k)            check(pick_ast(x, k))
-#define CHECK_BY_NAME(k)    check(pick_ast_by_name(x, k))
-#define GO(e)               check(e)
-#define FOREACH(x)          for(l=args(x);l;l=l->next)
-#define ELEM(l)             l->elem
-#define ELEML               ELEM(l)
 /** Check */
 ast* check(ast* x) {
 
@@ -229,18 +225,18 @@ ast* check(ast* x) {
                     // 1. type  () TODO: check forwrading...  
                     // 2. var   (forwarding type)
                     // 3. proc  (forwarding type/var)                    
-                    FOREACH(x) if (tag(ELEML)==TypeDecs) GO(ELEML);
-                    FOREACH(x) if (tag(ELEML)==VariableDeclarationLine) GO(ELEML);
-                    FOREACH(x) if (tag(ELEML)==ProcDecs) GO(ELEML);
+                    FOREACH(x) if (tag(ELEML)==TypeDecs) CHECK(ELEML);
+                    FOREACH(x) if (tag(ELEML)==VariableDeclarationLine) CHECK(ELEML);
+                    FOREACH(x) if (tag(ELEML)==ProcDecs) CHECK(ELEML);
                     break;
                 case VariableDeclarationLine:
-                    FOREACH(x) GO(ELEML);
+                    FOREACH(x) CHECK(ELEML);
                     break;
                 case TypeDecs:
-                    FOREACH(x) GO(ELEML);
+                    FOREACH(x) CHECK(ELEML);
                     break;       
                 case ProcDecs:
-                    FOREACH(x) GO(ELEML);
+                    FOREACH(x) CHECK(ELEML);
                     break;
                 case VariableDeclaration:
                     // append level/offset
@@ -341,7 +337,7 @@ ast* check(ast* x) {
                     break;
                 case FormalParamList:
                     param_offset = 8;       // first(8) reserved for static links
-                    FOREACH(x) GO(ELEML);   // check each param
+                    FOREACH(x) CHECK(ELEML);   // check each param
                     break;
                 case Param:
                     id = ast_var(pick_ast_by_name(x,"ID"));
@@ -380,8 +376,8 @@ ast* check(ast* x) {
                         lap = args(ap);
                         lfp = args(fp);
                         for(;lap && lfp; lap=lap->next, lfp=lfp->next ){
-                            t0 = GO(ELEM(lap));
-                            t1 = GO(pick_ast_by_name(ELEM(lfp),"type"));
+                            t0 = CHECK(ELEM(lap));
+                            t1 = CHECK(pick_ast_by_name(ELEM(lfp),"type"));
                             if ( t0 != t1 )
                                 error(x,"Formal and actual parameters don't match");
                         }
@@ -396,7 +392,7 @@ ast* check(ast* x) {
                     break;
                 case ReadStatement:
                     FOREACH(pick_ast_by_name(x,"lvalue-list")){
-                        t0 = GO(ELEML);
+                        t0 = CHECK(ELEML);
                         
                         if ( t0 != basic_int && 
                              t0 != basic_real &&
@@ -406,7 +402,7 @@ ast* check(ast* x) {
                     break;
                 case WriteStatement:
                     FOREACH(pick_ast_by_name(x,"expression-list")){
-                        t0 = GO(ELEML);
+                        t0 = CHECK(ELEML);
                         if ( t0 != basic_int && 
                              t0 != basic_real &&
                              t0 != basic_str &&
@@ -461,10 +457,10 @@ ast* check(ast* x) {
                         error(x,"This type (maybe EMPTY-TYPE) conflicts with PROCEDURE declaration");
                     break;
                 case StatementBlock:                    
-                    FOREACH(x) GO(ELEML); 
+                    FOREACH(x) CHECK(ELEML); 
                     break;
                 case ExprList: 
-                    FOREACH(x) GO(ELEML);
+                    FOREACH(x) CHECK(ELEML);
                     break;
                 /*
                     For expression, return no-type if something wrong or some 
@@ -578,8 +574,8 @@ ast* check(ast* x) {
                         lap = args(ap);
                         lfp = args(fp);
                         for(;lap && lfp; lap=lap->next, lfp=lfp->next ){
-                            t0 = GO(ELEM(lap));
-                            t1 = GO(pick_ast_by_name(ELEM(lfp),"type"));
+                            t0 = CHECK(ELEM(lap));
+                            t1 = CHECK(pick_ast_by_name(ELEM(lfp),"type"));
                             if ( t0 != t1 )
                                 error(x,"Formal and actual parameters don't match");
                         }
@@ -588,7 +584,7 @@ ast* check(ast* x) {
                         if ( !lap && lfp )
                             error(x,"Need more actual parameters");
                         // type of procedure
-                        result = GO( pick_ast_by_name(decl,"type") );
+                        result = CHECK( pick_ast_by_name(decl,"type") );
                     }
 
                     append_ast(x,result);
@@ -605,12 +601,12 @@ ast* check(ast* x) {
                         error(x,"Cannot find the ARRAY constructor's type");
 
 
-                    array_elem_type = GO( pick_ast_by_name(decl,"type") );
+                    array_elem_type = CHECK( pick_ast_by_name(decl,"type") );
 
                     ail = args(pick_ast_by_name(x,"array-init-list"));
                     for(;ail;ail=ail->next){
-                        t0 = GO( pick_ast_by_name(ELEM(ail),"expression-count") );
-                        t1 = GO( pick_ast_by_name(ELEM(ail),"expression-instance") );
+                        t0 = CHECK( pick_ast_by_name(ELEM(ail),"expression-count") );
+                        t1 = CHECK( pick_ast_by_name(ELEM(ail),"expression-instance") );
                         if ( t0 != basic_int )
                             error(x,"Counter in ARRAY constructor must be of INT type");
                         if ( t1 != array_elem_type )
@@ -653,7 +649,7 @@ ast* check(ast* x) {
                         if ( !decl )
                             error(x,"Unknow variable name");
                         else{
-                            result = GO( pick_ast_by_name(decl,"type") );
+                            result = CHECK( pick_ast_by_name(decl,"type") );
                         }
                         append_ast(x,result);                        
                         append_ast(x,mk_int(CUR_LEVEL-ast_int(pick_ast_by_name(decl,"level"))));

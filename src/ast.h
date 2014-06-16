@@ -139,11 +139,14 @@ ast_list* append(ast_list* r, ast* e);
 int tag(ast* a); // Use function instead of MACRO, this can ensure
                  // that the type inference works
 
-//#define tag(a)    (a->info.node.tag)
-#define ast_int(a)  (a->info.integer)
-#define ast_real(a) (a->info.real)
-#define ast_var(a)  (a->info.variable)
-#define ast_str(a)  (a->info.string)
+//#define tag(a)        (a->info.node.tag)
+#define ast_int(a)      (a->info.integer)
+#define ast_real(a)     (a->info.real)
+#define ast_var(a)      (a->info.variable)
+#define ast_str(a)      (a->info.string)
+#define ELEM(a)         (a->elem)
+#define ELEML           (ELEM(l))
+#define FOREACH(x)      for(l=args(x);l;l=l->next)
 
 ast_list* args(ast* a);
 int ast_real_repr(ast *a);

@@ -2,12 +2,10 @@
  * Code Style Generate
  */
 
+#include "ast.h"
 #include "routine.h"
 
-#define P                   printf
 #define NEXT_OFFSET         (offset + 4)
-#define FOREACH             for (l = args(x); l; l = l->next)
-#define ELEM                l->elem
 
 #define PO()                print_ast_code_style_offset(offset)
 
@@ -17,12 +15,12 @@
 #define PRINT(t)            print_ast_code_style(t, offset);
 #define PRINT_NEXT(t)       print_ast_code_style(t, NEXT_OFFSET);
 
-#define EACHPRINT()         FOREACH PRINT(l->elem) 
-#define EACHPRINT_NEXT()    FOREACH PRINT_NEXT(l->elem) 
+#define EACHPRINT(x)        FOREACH(x) PRINT(ELEML) 
+#define EACHPRINT_NEXT(x)   FOREACH(x) PRINT_NEXT(ELEML) 
 
 #define SEPLIST(sep)        do {                    \
                                 i = 0;              \
-                                FOREACH {           \
+                                FOREACH(x) {           \
                                     if (i > 0) {    \
                                         P(sep);     \
                                         P(" ");     \
@@ -79,12 +77,12 @@ void print_ast_code_style(ast* x, int offset) {
                     PO();P("END;\n");
                     break;
                 case DeclarationBlock:
-                    EACHPRINT();
+                    EACHPRINT(x);
                     break;
                 case VariableDeclarationLine:
                 case TypeDecs:
                 case ProcDecs:
-                    EACHPRINT();
+                    EACHPRINT(x);
                     break;
                 case VariableDeclaration:
                     PO();RECORD_LINE();P("VAR ");SPRINT(0);P(" : ");SPRINT(1);P(" = ");SPRINT(2);P(";\n");
@@ -111,7 +109,7 @@ void print_ast_code_style(ast* x, int offset) {
                 //    P("[No Type]");
                 //    break;
                 case CompList:
-                    EACHPRINT_NEXT();
+                    EACHPRINT_NEXT(x);
                     break;
                 case Comp:
                     PO();SPRINT(0);P(" : ");SPRINT(1);P(";\n");
@@ -163,7 +161,7 @@ void print_ast_code_style(ast* x, int offset) {
                     PO();RECORD_LINE();P("RETURN ");SPRINT(0);P(";\n");
                     break;
                 case StatementBlock:
-                    EACHPRINT();
+                    EACHPRINT(x);
                     break;
                 case ExprList:
                     SEPLIST(",");

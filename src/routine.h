@@ -2,7 +2,11 @@
 #define _ACTION_H_
     
 #include "ast.h"
+
+/* Global Macro */
+#define P   printf
     
+/* Compile Routine */
 void routine(ast* t);
     
 /* Code Style */
