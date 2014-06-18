@@ -517,289 +517,284 @@ void gen(ast* x) {
                     break;
                 case IfStatement:
                     /*
-                       If A then B else C:
+                        If A then B else C:
 
-                       [get A]
-                       cmpl $0,A
-                       jne L2
-                       C
-                       jmp L3:
-L2: 
-B
-L3:
+                        [get A]
+                        cmpl $0,A
+                        jne L2
+                        C
+                        jmp L3:
+                        L2: 
+                        B
+                        L3:
                      */
                     l2 = make_label(); l3 = make_label();
 
                     GEN_BY_NAME("expression");
-                    load_int(pick_ast_by_name(x,"expression"),"%eax");
-                    fprintf(code_out,"\t cmpl $0, %%eax\n");
-                    fprintf(code_out,"\t jne %s\n",l2);
+                    load_int(pick_ast_by_name(x, "expression"), "%eax");
+                    fprintf(code_out, "\t cmpl $0, %%eax\n");
+                    fprintf(code_out, "\t jne %s\n", l2);
                     GEN_BY_NAME("statement-else");
-                    fprintf(code_out,"\t jmp %s\n",l3);
-                    fprintf(code_out,"%s:\n",l2);
+                    fprintf(code_out, "\t jmp %s\n", l3);
+                    fprintf(code_out, "%s:\n", l2);
                     GEN_BY_NAME("statement");
-                    fprintf(code_out,"%s:\n",l3);
+                    fprintf(code_out, "%s:\n", l3);
                     break;
                 case WhileStatement:
                     /*
-                       while A do B
+                        while A do B
 
-L2:
-[get A]
-cmpl $0,A
-je L3
-B
-jmp L2;
-L3:
+                        L2:
+                        [get A]
+                        cmpl $0,A
+                        je L3
+                        B
+                        jmp L2;
+                        L3:
                      */
                     l2 = make_label(); l3 = make_label();
-                    fprintf(code_out,"%s:\n",l2);
+                    fprintf(code_out, "%s:\n", l2);
                     GEN_BY_NAME("expression");
-                    load_int(pick_ast(x,0),"%eax");
-                    fprintf(code_out,"\t cmpl $0, %%eax\n");
-                    fprintf(code_out,"\t je %s\n",l3);
+                    load_int(pick_ast(x, 0), "%eax");
+                    fprintf(code_out, "\t cmpl $0, %%eax\n");
+                    fprintf(code_out,"\t je %s\n", l3);
                     GEN_BY_NAME("statement");
-                    fprintf(code_out,"\t jmp %s\n",l2);
-                    fprintf(code_out,"%s:\n",l3);
+                    fprintf(code_out, "\t jmp %s\n", l2);
+                    fprintf(code_out, "%s:\n", l3);
                     break;
                 case LoopStatement:
                     /*
-                       Loop B:
+                        Loop B:
 
-L2:
-B
-jmp L2;
+                        L2:
+                        B
+                        jmp L2;
                      */
                     l2 = make_label();
-                    fprintf(code_out,"%s:\n",l2);
+                    fprintf(code_out, "%s:\n", l2);
                     GEN_BY_NAME("statement");
-                    fprintf(code_out,"\t jmp %s\n",l2);
+                    fprintf(code_out, "\t jmp %s\n", l2);
                     break;
                 case ForStatement:
                     /*
-                       For A := B to C by D do E:
-                       ================================
-A := B
-while A <= C
-E
-A = A + E
-====================
-[A := B]
-L2:
-[test A,C]
-jg L3
-E
-[ A := A + D
-jmp L2
-L3;
-====================
+                        For A := B to C by D do E:
+                        ================================
+                        A := B
+                        while A <= C
+                        E
+                        A = A + E
+                        ====================
+                        [A := B]
+                        L2:
+                        [test A,C]
+                        jg L3
+                        E
+                        [ A := A + D
+                        jmp L2
+                        L3;
+                        ====================
                      */
                     l2 = make_label(); l3 = make_label();
                     var = mk_node(Var,
-                            cons(pick_ast_by_name(x,"ID"),
-                                cons(NULL,
-                                    cons(mk_int(0),
-                                        cons(pick_ast_by_name(x,"offset"),
-                                            NULL)))));
+                                  cons(pick_ast_by_name(x,"ID"),
+                                       cons(NULL,
+                                            cons(mk_int(0),
+                                                 cons(pick_ast_by_name(x, "offset"), NULL)))));
 
                     gen(mk_node(AssignStatement,
                                 cons(var,
-                                    cons(pick_ast_by_name(x,"expression-from"),
-                                        NULL))));
-                    fprintf(code_out,"%s:\n",l2);
+                                     cons(pick_ast_by_name(x, "expression-from"), NULL))));
+                    fprintf(code_out, "%s:\n", l2);
                     GEN_BY_NAME("expression-to");
-                    load_int(var,"%eax");
-                    load_int(pick_ast_by_name(x,"expression-to"),"%ecx");
-                    fprintf(code_out,"\t cmpl %%ecx, %%eax\n");
-                    fprintf(code_out,"\t jg %s\n",l3);
+                    load_int(var, "%eax");
+                    load_int(pick_ast_by_name(x, "expression-to"), "%ecx");
+                    fprintf(code_out, "\t cmpl %%ecx, %%eax\n");
+                    fprintf(code_out, "\t jg %s\n", l3);
                     GEN_BY_NAME("statement");
                     GEN_BY_NAME("expression-by");
-                    load_int(var,"%eax");
-                    load_int(pick_ast_by_name(x,"expression-by"),"%ecx");
-                    fprintf(code_out,"\t addl %%ecx, %%eax\n");
-                    store_int("%eax",var);
-                    fprintf(code_out,"\t jmp %s\n",l2);
-                    fprintf(code_out,"%s:\n",l3);
+                    load_int(var, "%eax");
+                    load_int(pick_ast_by_name(x, "expression-by"), "%ecx");
+                    fprintf(code_out, "\t addl %%ecx, %%eax\n");
+                    store_int("%eax", var);
+                    fprintf(code_out, "\t jmp %s\n", l2);
+                    fprintf(code_out, "%s:\n", l3);
                     break;
                 case ExitStatement:
-                    fprintf(code_out,"\t leave\n\t ret\n");// epilogue 
+                    fprintf(code_out, "\t leave\n\t ret\n"); //epilogue
                     break;
                 case ReturnStatement:
-                    if ( tag(pick_ast_by_name(x,"expression")) == EmptyExpression )
-                        ;
-                    else{
+                    if (tag(pick_ast_by_name(x, "expression")) == EmptyExpression);
+                    else {
                         GEN_BY_NAME("expression");
-                        load_int(pick_ast_by_name(x,"expression"),"%eax");
+                        load_int(pick_ast_by_name(x, "expression"), "%eax");
                     }
-                    fprintf(code_out,"\t leave\n\t ret\n");// epilogue 
+                    fprintf(code_out, "\t leave\n\t ret\n");// epilogue
                     break;
-                case StatementBlock:  
-                    FOREACH(x) gen(ELEML);                
+                case StatementBlock:
+                    FOREACH(x) gen(ELEML);
                     break;
                 case ExprList:
                     assert(0);
                     break;
                     /*
-                       For expression, return no-type if something wrong or some 
+                       For expression, return no-type if something wrong or some
                        component is of no-type, which means I couldn't
                        handle the type of this expression.
-                     */
-                case BinOpExp:                    
+                    */
+                case BinOpExp:
                     // result type
                     t = pick_ast_by_name(x,"type");
-                    t1 = pick_ast_by_name(pick_ast_by_name(x,"expression-left"),"type");
-                    t2 = pick_ast_by_name(pick_ast_by_name(x,"expression-right"),"type");
+                    t1 = pick_ast_by_name(pick_ast_by_name(x, "expression-left"), "type");
+                    t2 = pick_ast_by_name(pick_ast_by_name(x, "expression-right"), "type");
 
-                    if ( tag(pick_ast_by_name(x,"binop")) == Plus ||
-                            tag(pick_ast_by_name(x,"binop")) == Minus ||
-                            tag(pick_ast_by_name(x,"binop")) == Times ) {
+                    if (tag(pick_ast_by_name(x, "binop")) == Plus ||
+                        tag(pick_ast_by_name(x,"binop")) == Minus ||
+                        tag(pick_ast_by_name(x,"binop")) == Times) {
                         // Arithmic, integer/real
                         // value of two sub-expr
                         GEN_K(1);
                         GEN_K(2);
-                        if ( !strcmp(ast_str(pick_ast(t,0)),"basic_int") ){
-                            load_int(pick_ast(x,1),"%eax");
-                            load_int(pick_ast(x,2),"%ecx");
+                        if (!strcmp(ast_str(pick_ast(t, 0)), "basic_int")) {
+                            load_int(pick_ast(x, 1), "%eax");
+                            load_int(pick_ast(x, 2), "%ecx");
 
-                            if ( tag(pick_ast_by_name(x,"binop")) == Plus )
-                                fprintf(code_out,"\t addl %%ecx, %%eax\n");
-                            else if ( tag(pick_ast_by_name(x,"binop")) == Minus ){
-                                fprintf(code_out,"\t subl %%ecx, %%eax\n");
-                            }else if ( tag(pick_ast_by_name(x,"binop")) == Times )
-                                fprintf(code_out,"\t imull %%ecx, %%eax\n");
+                            if (tag(pick_ast_by_name(x, "binop")) == Plus)
+                                fprintf(code_out, "\t addl %%ecx, %%eax\n");
+                            else if (tag(pick_ast_by_name(x, "binop")) == Minus) {
+                                fprintf(code_out, "\t subl %%ecx, %%eax\n");
+                            } else if (tag(pick_ast_by_name(x, "binop")) == Times)
+                                fprintf(code_out, "\t imull %%ecx, %%eax\n");
                             else
                                 assert(0); // shouldn't be here!
+                            store_int("%eax", x);
+                        } else if (!strcmp(ast_str(pick_ast(t, 0)), "basic_real")) {
+                            load_float(pick_ast(x, 1));
+                            load_float(pick_ast(x, 2));
 
-                            store_int("%eax",x);
-                        }else if ( !strcmp(ast_str(pick_ast(t,0)),"basic_real") ){
-                            load_float(pick_ast(x,1));
-                            load_float(pick_ast(x,2));
-
-                            if ( tag(pick_ast_by_name(x,"binop")) == Plus )
-                                fprintf(code_out,"\t faddp %%st, %%st(1)\n");
-                            else if ( tag(pick_ast_by_name(x,"binop")) == Minus ){
-                                fprintf(code_out,"\t fsubrp %%st, %%st(1)\n");
-                            }else if ( tag(pick_ast_by_name(x,"binop")) == Times )
-                                fprintf(code_out,"\t fmulp %%st, %%st(1)\n");
+                            if (tag(pick_ast_by_name(x, "binop")) == Plus)
+                                fprintf(code_out, "\t faddp %%st, %%st(1)\n");
+                            else if (tag(pick_ast_by_name(x, "binop")) == Minus) {
+                                fprintf(code_out, "\t fsubrp %%st, %%st(1)\n");
+                            } else if (tag(pick_ast_by_name(x, "binop")) == Times)
+                                fprintf(code_out, "\t fmulp %%st, %%st(1)\n");
                             else
                                 assert(0); // shouldn't be here!
-
                             store_float(x);
-                        }else
+                        } else
                             assert(0); // shouldn't be here!
-                    }else if (tag(pick_ast_by_name(x,"binop")) == Divide ||
-                            tag(pick_ast_by_name(x,"binop")) == Module){                    
+                    } else
+                    if (tag(pick_ast_by_name(x, "binop")) == Divide ||
+                        tag(pick_ast_by_name(x, "binop")) == Module) {
                         // Arithmic, integer
                         // value of two sub-expr
                         GEN_K(1);
                         GEN_K(2);
-                        if ( !strcmp(ast_str(pick_ast(t,0)),"basic_int") ){
-                            load_int(pick_ast(x,1),"%eax");
-                            load_int(pick_ast(x,2),"%ecx");
+                        if (!strcmp(ast_str(pick_ast(t, 0)), "basic_int")) {
+                            load_int(pick_ast(x, 1), "%eax");
+                            load_int(pick_ast(x, 2), "%ecx");
 
-                            if ( tag(pick_ast_by_name(x,"binop")) == Divide) {
-                                fprintf(code_out,"\t cltd\n");  
-                                fprintf(code_out,"\t idivl %%ecx\n");
-                            }else if ( tag(pick_ast_by_name(x,"binop")) == Module) {
-                                fprintf(code_out,"\t cltd\n");  
-                                fprintf(code_out,"\t idivl %%ecx\n");
-                                fprintf(code_out,"\t movl %%edx, %%eax\n");
-                            }else
+                            if (tag(pick_ast_by_name(x, "binop")) == Divide) {
+                                fprintf(code_out, "\t cltd\n");
+                                fprintf(code_out, "\t idivl %%ecx\n");
+                            } else if (tag(pick_ast_by_name(x, "binop")) == Module) {
+                                fprintf(code_out, "\t cltd\n");
+                                fprintf(code_out, "\t idivl %%ecx\n");
+                                fprintf(code_out, "\t movl %%edx, %%eax\n");
+                            } else
                                 assert(0); // shouldn't be here!
 
-                            store_int("%eax",x);                            
-                        }else
+                            store_int("%eax", x);
+                        } else
                             assert(0); // shouldn't be here!
-                    }else if ( tag(pick_ast_by_name(x,"binop")) == Slash ){             
+                    } else if (tag(pick_ast_by_name(x, "binop")) == Slash) {
                         // Arithmic, real
                         // value of two sub-expr
                         GEN_K(1);
                         GEN_K(2);
-                        if ( !strcmp(ast_str(pick_ast(t,0)),"basic_real") ){
-                            load_float(pick_ast(x,1));
-                            load_float(pick_ast(x,2));
+                        if (!strcmp(ast_str(pick_ast(t, 0)),"basic_real")) {
+                            load_float(pick_ast(x, 1));
+                            load_float(pick_ast(x, 2));
 
-                            fprintf(code_out,"\t fdivrp %%st, %%st(1)\n");
+                            fprintf(code_out, "\t fdivrp %%st, %%st(1)\n");
 
-                            store_float(x);                            
+                            store_float(x);
                         }else
                             assert(0); // shouldn't be here!
-                    }else if ( tag(pick_ast_by_name(x,"binop")) == Gt ||
-                            tag(pick_ast_by_name(x,"binop")) == Lt ||
-                            tag(pick_ast_by_name(x,"binop")) == Eq ||
-                            tag(pick_ast_by_name(x,"binop")) == Ge ||
-                            tag(pick_ast_by_name(x,"binop")) == Le ||
-                            tag(pick_ast_by_name(x,"binop")) == Ne ){          
+                    } else if (tag(pick_ast_by_name(x, "binop")) == Gt ||
+                               tag(pick_ast_by_name(x, "binop")) == Lt ||
+                               tag(pick_ast_by_name(x, "binop")) == Eq ||
+                               tag(pick_ast_by_name(x, "binop")) == Ge ||
+                               tag(pick_ast_by_name(x, "binop")) == Le ||
+                               tag(pick_ast_by_name(x, "binop")) == Ne) {
                         // Comparation
                         // value of two sub-expr
                         GEN_K(1);
                         GEN_K(2);
-                        if ( !strcmp(ast_str(pick_ast(t1,0)),"basic_int") && 
-                                !strcmp(ast_str(pick_ast(t2,0)),"basic_int") ){
-                            load_int(pick_ast(x,1),"%eax");
-                            load_int(pick_ast(x,2),"%ecx");                            
+                        if (!strcmp(ast_str(pick_ast(t1, 0)), "basic_int") &&
+                                !strcmp(ast_str(pick_ast(t2, 0)), "basic_int")) {
+                            load_int(pick_ast(x, 1), "%eax");
+                            load_int(pick_ast(x, 2), "%ecx");
 
-                            fprintf(code_out,"\t cmpl %%ecx, %%eax\n");
-                            switch ( tag(pick_ast_by_name(x,"binop")) ){
-                                case Gt: fprintf(code_out,"\t setg %%al\n"); break;
-                                case Lt: fprintf(code_out,"\t setl %%al\n"); break;
-                                case Eq: fprintf(code_out,"\t sete %%al\n"); break;
-                                case Ge: fprintf(code_out,"\t setge %%al\n"); break;
-                                case Le: fprintf(code_out,"\t setle %%al\n"); break;
-                                case Ne: fprintf(code_out,"\t setne %%al\n"); break;
+                            fprintf(code_out, "\t cmpl %%ecx, %%eax\n");
+                            switch (tag(pick_ast_by_name(x, "binop"))) {
+                                case Gt: fprintf(code_out, "\t setg %%al\n"); break;
+                                case Lt: fprintf(code_out, "\t setl %%al\n"); break;
+                                case Eq: fprintf(code_out, "\t sete %%al\n"); break;
+                                case Ge: fprintf(code_out, "\t setge %%al\n"); break;
+                                case Le: fprintf(code_out, "\t setle %%al\n"); break;
+                                case Ne: fprintf(code_out, "\t setne %%al\n"); break;
                                 default: break;
                             }
-                            fprintf(code_out,"\t movzbl	%%al, %%eax\n");
+                            fprintf(code_out, "\t movzbl	%%al, %%eax\n");
 
-                            store_int("%eax",x);
-                        }else{
+                            store_int("%eax", x);
+                        } else {
                             // order to push into float stack is essential (and wired) here!
-                            load_float(pick_ast(x,1));
-                            load_float(pick_ast(x,2));
+                            load_float(pick_ast(x, 1));
+                            load_float(pick_ast(x, 2));
 
-                            fprintf(code_out,"\t fucomip %%st(1), %%st\n");
-                            fprintf(code_out,"\t fstp %%st(0)\n");
+                            fprintf(code_out, "\t fucomip %%st(1), %%st\n");
+                            fprintf(code_out, "\t fstp %%st(0)\n");
 
-                            switch ( tag(pick_ast_by_name(x,"binop")) ){
-                                case Gt: fprintf(code_out,"\t setg %%al\n"); break;
-                                case Lt: fprintf(code_out,"\t setl %%al\n"); break;
-                                case Eq: fprintf(code_out,"\t sete %%al\n"); break;
-                                case Ge: fprintf(code_out,"\t setge %%al\n"); break;
-                                case Le: fprintf(code_out,"\t setle %%al\n"); break;
-                                case Ne: fprintf(code_out,"\t setne %%al\n"); break;
+                            switch (tag(pick_ast_by_name(x, "binop"))) {
+                                case Gt: fprintf(code_out, "\t setg %%al\n"); break;
+                                case Lt: fprintf(code_out, "\t setl %%al\n"); break;
+                                case Eq: fprintf(code_out, "\t sete %%al\n"); break;
+                                case Ge: fprintf(code_out, "\t setge %%al\n"); break;
+                                case Le: fprintf(code_out, "\t setle %%al\n"); break;
+                                case Ne: fprintf(code_out, "\t setne %%al\n"); break;
                                 default: break;
                             }
-                            fprintf(code_out,"\t movzbl	%%al, %%eax\n");
+                            fprintf(code_out, "\t movzbl	%%al, %%eax\n");
 
-                            store_int("%eax",x);
+                            store_int("%eax", x);
                         }
-                    } if ( tag(pick_ast_by_name(x,"binop")) == And ||
-                            tag(pick_ast_by_name(x,"binop")) == Or ){
+                    } else if (tag(pick_ast_by_name(x, "binop")) == And ||
+                               tag(pick_ast_by_name(x, "binop")) == Or) {
                         // Boolean operation: and / or
                         // value of two sub-expr
-                        if ( tag(pick_ast_by_name(x,"binop")) == And ){
+                        if (tag(pick_ast_by_name(x, "binop")) == And) {
                             l2 = make_label(); l3 = make_label();
-
                             GEN_K(1);
-                            load_int(pick_ast(x,1),"%eax");
-                            fprintf(code_out,"\t cmpl $0, %%eax\n");
-                            fprintf(code_out,"\t je %s\n",l2);                        
+                            load_int(pick_ast(x, 1), "%eax");
+                            fprintf(code_out, "\t cmpl $0, %%eax\n");
+                            fprintf(code_out, "\t je %s\n",l2);
                             GEN_K(2);
-                            load_int(pick_ast(x,2),"%eax");
-                            fprintf(code_out,"\t cmpl $0, %%eax\n");
-                            fprintf(code_out,"\t je %s\n",l2);    
-                            fprintf(code_out,"\t movl $1, %%eax\n");    
-                            fprintf(code_out,"\t jmp %s\n",l3);
-                            fprintf(code_out,"%s:\n",l2);
-                            fprintf(code_out,"\t movl $0, %%eax\n");                         
-                            fprintf(code_out,"%s:\n",l3);
-                            store_int("%eax",x);
-                        }else{                            
+                            load_int(pick_ast(x, 2), "%eax");
+                            fprintf(code_out, "\t cmpl $0, %%eax\n");
+                            fprintf(code_out, "\t je %s\n", l2);
+                            fprintf(code_out, "\t movl $1, %%eax\n");
+                            fprintf(code_out, "\t jmp %s\n", l3);
+                            fprintf(code_out, "%s:\n", l2);
+                            fprintf(code_out, "\t movl $0, %%eax\n");
+                            fprintf(code_out, "%s:\n", l3);
+                            store_int("%eax", x);
+                        } else {
                             l2 = make_label(); l3 = make_label(); l4 = make_label();
 
                             GEN_K(1);
-                            load_int(pick_ast(x,1),"%eax");
-                            fprintf(code_out,"\t cmpl $0, %%eax\n");
+                            load_int(pick_ast(x, 1), "%eax");
+                            fprintf(code_out, "\t cmpl $0, %%eax\n");
                             fprintf(code_out,"\t jne %s\n",l2);  
                             GEN_K(2);
                             load_int(pick_ast(x,2),"%eax");
