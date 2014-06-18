@@ -172,7 +172,8 @@ int _take_local_offset() {
     CURR_LOCAL_OFFSET -= 4;
     return CURR_LOCAL_OFFSET;
 }
-#define TAKE_LOCAL_OFFSET   _take_param_offset()
+#define TAKE_LOCAL_OFFSET   (CURR_LOCAL_OFFSET -= 4, CURR_LOCAL_OFFSET)
+//#define TAKE_LOCAL_OFFSET   _take_param_offset() // todo: Why function version is wrong?
 
 /* Parameter offset */
 int param_offset;
@@ -180,7 +181,8 @@ int _take_param_offset() {
     param_offset += 4;
     return param_offset;
 }
-#define TAKE_PARAM_OFFSET   _take_param_offset() 
+#define TAKE_PARAM_OFFSET   (param_offset += 4, param_offset)
+//#define TAKE_PARAM_OFFSET   _take_param_offset() 
 
 /** Check Procedure */
 ast* check(ast* x) {
