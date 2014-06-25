@@ -19,9 +19,9 @@ fi
 # compile to executable
 if [ "$?" -eq "0" ]; then
     rm data.s code.s
-    gcc -g -m32 -c sup.c
+    gcc -g -m32 -c centry.c 
     gcc -g -m32 -c pcat.s
-    gcc -g -m32 sup.o pcat.o -o $1.exe
+    gcc -g -m32 centry.o pcat.o -o $1.exe
     mv pcat.s $1.code
     mv frame.out $1.frame
     mv ast.out $1.ast
